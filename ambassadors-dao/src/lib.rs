@@ -19,8 +19,6 @@ impl Contract {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
     fn generates_contract() {
         unimplemented!()

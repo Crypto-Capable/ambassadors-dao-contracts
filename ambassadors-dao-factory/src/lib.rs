@@ -1,5 +1,6 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::{env, near_bindgen, AccountId, CryptoHash, PanicOnDefault, Promise};
+use near_sdk::serde::{Deserialize, Serialize};
+use near_sdk::{near_bindgen, AccountId, PanicOnDefault};
 
 use factory_manager::FactoryManager;
 
@@ -24,7 +25,7 @@ pub struct DaoContractMetadata {
 #[derive(BorshSerialize, BorshDeserialize, PanicOnDefault)]
 pub struct SputnikDAOFactory {
     factory_manager: FactoryManager,
-    dao: AccountId,
+    dao: Option<AccountId>,
 }
 
 #[near_bindgen]
@@ -33,7 +34,7 @@ impl SputnikDAOFactory {
     pub fn new() -> Self {
         Self {
             factory_manager: FactoryManager {},
-            daos: UnorderedSet::new(b"d".to_vec()),
+            dao: None,
         }
     }
 }
