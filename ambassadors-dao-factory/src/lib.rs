@@ -28,10 +28,9 @@ const DAO_CONTRACT_INITIAL_VERSION: Version = (0, 1, 0);
 #[cfg_attr(not(target_arch = "wasm32"), derive(Clone, Debug))]
 #[serde(crate = "near_sdk::serde")]
 pub struct DaoContractMetadata {
-    /// version of the DAO contract code (e.g. (2,1,3) -> 2.1.3, [3,6,0] -> 3.6.0)
+    /// version of the DAO contract code (e.g. (2,1,3) -> 2.1.3, (3,6,0) -> 3.6.0)
     pub version: Version,
-    /// commit id of https://github.com/near-daos/sputnik-dao-contract
-    /// representing a snapshot of the code that generated the wasm
+    /// commit ID representing a snapshot of the code that generated the wasm
     pub commit_id: Option<String>,
     /// if available, url to the changelog to see the changes introduced in this version
     pub changelog_url: Option<String>,
@@ -80,7 +79,7 @@ impl AmbassadorsDAOFactory {
         env::storage_write(FACTORY_OWNER_KEY, owner_id.as_bytes());
     }
 
-    /// Set the hash for the default code
+    /// Set the hash for the default contract code
     pub fn set_default_code_hash(&self, code_hash: Base58CryptoHash) {
         self.assert_owner();
         let code_hash: CryptoHash = code_hash.into();
@@ -137,7 +136,8 @@ impl AmbassadorsDAOFactory {
         }
     }
 
-    /// Tries to update given account created by this factory to the specified code.
+    /// Tries to update a contract (created by this factory) specified by the account ID
+    /// to a new code specified by the code hash
     pub fn update(&self, account_id: AccountId, code_hash: Base58CryptoHash) {
         assert!(
             self.daos.contains(&account_id),
@@ -147,7 +147,7 @@ impl AmbassadorsDAOFactory {
             .update_contract(account_id, code_hash, "update");
     }
 
-    /// Get the list of IDs of all the DAOs created by the factory
+    /// Get the list of account IDs of all the DAOs created by the factory
     pub fn get_dao_list(&self) -> Vec<AccountId> {
         self.daos.to_vec()
     }
@@ -157,7 +157,7 @@ impl AmbassadorsDAOFactory {
         self.daos.len()
     }
 
-    /// Get daos in paginated view.
+    /// Get DAOs in paginated view.
     pub fn get_daos(&self, from_index: u64, limit: u64) -> Vec<AccountId> {
         let elements = self.daos.as_vector();
         (from_index..std::cmp::min(from_index + limit, elements.len()))
