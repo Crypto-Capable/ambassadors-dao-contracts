@@ -6,6 +6,9 @@ use near_sdk::json_types::{U128, U64};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{env, AccountId, Balance};
 
+use crate::proposals::{PolicyParameters, Proposal, ProposalKind, ProposalStatus, Vote};
+use crate::types::Action;
+
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Debug, PartialEq))]
 #[serde(crate = "near_sdk::serde")]
@@ -76,7 +79,7 @@ pub enum WeightOrRatio {
 }
 
 impl WeightOrRatio{
-    Ratio(u64, u64),
+    Ratio::(u64, u64),
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, PartialEq)]

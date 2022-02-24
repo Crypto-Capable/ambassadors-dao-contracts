@@ -18,6 +18,17 @@ pub enum ProposalStatus{
     Expired,
 }
 
+pub enum WinnerWallets{
+    topone: AccountId,
+    toptwo: AccountId,
+    topthree: AccountId,
+}
+
+pub enum WinnerSubmissions{
+    topone: String,
+    toptow: String,
+    topthree: String,
+}
 pub enum ProposalInfoKind{
     HackathonInfo{
         expected_registration : U128,
@@ -30,6 +41,27 @@ pub enum ProposalInfoKind{
         initial_response : String,
         participant_number : U128,
         meme_genre : String,
+    },
+    HackathonCompletedInfo{
+        registration_no: U128,
+        team_nos: U128,
+        submission_nos: U128,
+        winner_submissions: WinnerSubmissions,
+        winner_wallets: WinnerWallets,
+    }
+    MemeContestCompletedInfo{
+        memes_no: U128,
+        winner_submissions: WinnerSubmissions,
+        winner_wallets: WinnerWallets,
+    },
+    WebinarConduct{
+        registration_no: U128,
+        attended_no: U128,
+        webinar_link: String,
+    },
+    ContentCoordinationInput{
+        links: String,
+        descriptive_story: String,
     },
 }
 
@@ -50,6 +82,10 @@ pub enum ProposalKind{
         created_at : Date,
         info : ProposalInfoKind::MemeContestInfo,
     },
+    HackathonCompleted{ info: ProposalInfoKind::HackathonCompletedInfo },
+    MemeContestCompleted{ info: ProposalInfoKind::MemeContestCompletedInfo },
+    Webinar{ info: ProposalInfoKind::WebinarConduct },
+    ContentCoordination{ info: ProposalInfoKind::ContentCoordinationInput },
     Vote,
 }
 
@@ -62,6 +98,10 @@ impl ProposalKind{
             ProposalKind::RemoveMemberFromRole { .. } => "remove_member_from_role",
             ProposalKind::Hackathon { .. } => "hackathon",
             ProposalKind::MemeContest { .. } => "meme contest",
+            ProposalKind::HackathonCompleted{ .. } => "hackathon_completed",
+            ProposalKind::MemeContestCompleted{ .. } => "meme_Contest_Completed",
+            ProposalKind::Webinar{ .. } => "webinar",
+            ProposalKind:: ContentCoordination{ .. } => "content_coordination",
         }
     }
 }
@@ -91,7 +131,7 @@ pub struct Proposal{
     pub status: ProposalStatus,
     pub proposer: AccountId,
     pub kind: ProposalKind,
-    pub description: ProposalInfoKind::HackathonInfo,
+    pub description: String,
     pub votes: HashMap<AccountId,Vote>,
     pub vote_counts: HashMap<String, [Balance; 3]>,
     pub amount: U64,
@@ -114,8 +154,6 @@ impl From<VersionedProposal> for Proposal {
 }
 
 impl Proposal{
-
-
     pub fn update_votes(
         &mut self,
         account_id: &AccountId,
@@ -214,6 +252,39 @@ impl Contract{
                         })
                     )
             }
+            ProposalKind::HackathonCompleted{&mut self, info: &ProposalInfoKind::HackathonCompletedInfo} => {
+                let id = self.last_proposal_id;
+                self.proposals.insert(
+                    Promise::new(ProposalKind::HackathonCompletedInfo {
+                        info: ProposalInfoKind::HackathonCompletedInfo,
+                        })
+                    )
+            }
+            ProposalKind::MemeContestCompleted{&mut self, info : &ProposalInfoKind::MemeContestCompletedInfo} => {
+                let id = self.last_proposal_id;
+                self.proposals.insert(
+                    Promise::new(ProposalKind::MemeContestCompleted {
+                        info: ProposalInfoKind::MemeContestCompletedInfo,
+                        })
+                    )
+            }
+            ProposalKind::Webinar{&mut self, info: &ProposalInfoKin::WebinarConduct} => {
+                let id = self.last_proposal_id;
+                self.proposals.insert(
+                    Promise::new(ProposalKind::Webinar {
+                        info: ProposalInfoKind::WebinarConduct,
+                        })
+                    )
+            }
+            ProposalKind::ContentCoordination{&mut self, info: &ProposalInfoKind::ContentCoordinationInput} => {
+                let id = self.last_proposal_id;
+                self.proposals.insert(
+                    Promise::new(ProposalKind::ContentCoordination {
+                        info: ProposalInfoKind::ContentCoordinationInput,
+                        })
+                    )
+            }
+            
         };  
         match result {
             PromiseOrValue::Promise(promise) => promise
@@ -297,6 +368,7 @@ impl Contract{
                 self.proposals.remove(&id);
                 false
             }
+
             Action::VoteApprove | Action::VoteReject | Action::VoteRemove => {
                 assert!(
                     matches!(proposal.status, ProposalStatus::InProgress),
@@ -319,6 +391,25 @@ impl Contract{
                     self.internal_reject_proposal(&policy, &proposal, true);
                     true
                 }
+            }
+            Action::Finalize => {
+                proposal.status = policy.proposal_status(
+                    &proposal,
+                    policy.roles.iter().map(|r| r.name.clone()).collect(),
+                    self.total_delegation_amount,
+                );
+                match proposal.status {
+                    ProposalStatus::Approved => {
+                        self.internal_execute_proposal(&policy, &proposal, id);
+                    }
+                    ProposalStatus::Expired => {
+                        self.internal_reject_proposal(&policy, &proposal, true);
+                    }
+                    _ => {
+                        env::panic_str("ERR_PROPOSAL_NOT_EXPIRED_OR_FAILED");
+                    }
+                }
+                true
             }
 
 
