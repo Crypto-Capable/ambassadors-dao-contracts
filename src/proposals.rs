@@ -1,4 +1,13 @@
+///impl contract, proposalkind::something{params} , expected identifier , line 248,257,266,274,282,290
+///proc macro derive panicked , line 72
+///struct proposal , expected type but found variant, line 89,94,96,97,98,99
+///matching proposal inside impl contract , expected value but found struct variant, line 248, 253,262, 270,278,286,
+///struct proposal, cannot infer type enum, line 138,
+
+
+
 use std::collections::HashMap;
+use std::time::SystemTime;
 use near_sdk::{near_bindgen, env};
 use near_contract_standards::fungible_token::core_impl::ext_fungible_token;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
@@ -18,17 +27,19 @@ pub enum ProposalStatus{
     Expired,
 }
 
+/*
 pub enum WinnerWallets{
-    topone: AccountId,
-    toptwo: AccountId,
-    topthree: AccountId,
+    winnerwal : String,
+    runnerwal : String,
+    loserwal : String,
 }
 
 pub enum WinnerSubmissions{
-    topone: String,
-    toptow: String,
-    topthree: String,
+    winnersub : String,
+    runnersub : String,
+    losersub : String,
 }
+*/
 pub enum ProposalInfoKind{
     HackathonInfo{
         expected_registration : U128,
@@ -46,13 +57,13 @@ pub enum ProposalInfoKind{
         registration_no: U128,
         team_nos: U128,
         submission_nos: U128,
-        winner_submissions: WinnerSubmissions,
-        winner_wallets: WinnerWallets,
-    }
+        winner_submissions: String,
+        winner_wallets: String,
+    },
     MemeContestCompletedInfo{
         memes_no: U128,
-        winner_submissions: WinnerSubmissions,
-        winner_wallets: WinnerWallets,
+        winner_submissions: String,
+        winner_wallets: String,
     },
     WebinarConduct{
         registration_no: U128,
@@ -74,12 +85,12 @@ pub enum ProposalKind{
     AddMemberToRole{ member_id: AccountId, role: String },
     RemoveMemberFromRole { member_id: AccountId, role: String },
     Hackathon {
-        created_at: Date,
+        created_at: SystemTime::now(),
         info: ProposalInfoKind::HackathonInfo,
     },
 
     MemeContest{
-        created_at : Date,
+        created_at : SystemTime::now(),
         info : ProposalInfoKind::MemeContestInfo,
     },
     HackathonCompleted{ info: ProposalInfoKind::HackathonCompletedInfo },
@@ -234,11 +245,11 @@ impl Contract{
                 self.policy.set(&VersionedPolicy::Current(new_policy));
                 PromiseOrValue::Value(())
             }
-            ProposalKind::Hackathon{&mut self, info : &ProposalInfoKind:: HackathonInfo} => {
+            ProposalKind::Hackathon{mut self, info : &ProposalInfoKind:: HackathonInfo} => {
                 let id = self.last_proposal_id;
                 self.proposals.insert(
                     Promise::new(ProposalKind::Hackathon {
-                        create_at : Utc.now(),
+                        create_at : SystemTime.now(),
                         info: ProposalInfoKind::HackathonInfo,
                         })
                     )
@@ -247,7 +258,7 @@ impl Contract{
                 let id = self.last_proposal_id;
                 self.proposals.insert(
                     Promise::new(ProposalKind::MemeContest {
-                        create_at : Utc.now(),
+                        create_at : SystemTime.now(),
                         info: ProposalInfoKind::MemeContestInfo,
                         })
                     )
@@ -326,14 +337,14 @@ impl Contract{
             ProposalKind::AddMemberToRole{ member_id, role } => match Group{
                 RoleKind::Group(accounts) => {
                     if accounts.contains(member_id){
-                        panic!("ERR_ACCOUNT_EXISTS"),
+                        panic!("ERR_ACCOUNT_EXISTS");
                     }
                 }
             },
             ProposalKind::RemoveMemberFromRole{ member_id } => match Group{
                 RoleKind::Group(accounts) => {
                     if !accounts.contains(member_id){
-                        panic!("ACC_DOESNT_EXISTS"),
+                        panic!("ACC_DOESNT_EXISTS");
                     }
                 }
             }
@@ -387,10 +398,10 @@ impl Contract{
                     self.internal_execute_proposal(&policy, &proposal, id);
                     true
                 }
-                else proposal.status == ProposalStatus::Rejected {
-                    self.internal_reject_proposal(&policy, &proposal, true);
+                else{ proposal.status == ProposalStatus::Rejected {
+                    self.internal_reject_proposal(&policy, &proposal, id);
                     true
-                }
+                }}
             }
             Action::Finalize => {
                 proposal.status = policy.proposal_status(
@@ -401,9 +412,6 @@ impl Contract{
                 match proposal.status {
                     ProposalStatus::Approved => {
                         self.internal_execute_proposal(&policy, &proposal, id);
-                    }
-                    ProposalStatus::Expired => {
-                        self.internal_reject_proposal(&policy, &proposal, true);
                     }
                     _ => {
                         env::panic_str("ERR_PROPOSAL_NOT_EXPIRED_OR_FAILED");

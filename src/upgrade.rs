@@ -1,3 +1,5 @@
+//! Logic to upgrade Sputnik contracts.
+
 use near_sdk::serde_json::json;
 use near_sdk::Gas;
 

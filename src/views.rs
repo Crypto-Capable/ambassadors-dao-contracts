@@ -1,3 +1,6 @@
+///cannot infer type for struct proposals:Proposals, line 8
+
+
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 
 use std::cmp::min;

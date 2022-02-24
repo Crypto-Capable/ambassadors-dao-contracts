@@ -22,6 +22,16 @@ pub struct Config {
     pub metadata: Base64VecU8,
 }
 
+#[cfg(test)]
+impl Config {
+    pub fn test_config() -> Self {
+        Self {
+            name: "Test".to_string(),
+            purpose: "to test".to_string(),
+            metadata: Base64VecU8(vec![]),
+        }
+    }
+}
 
 /// Set of possible action to take.
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Debug)]
@@ -40,6 +50,8 @@ pub enum Action {
     /// Finalize proposal, called when it's expired to return the funds
     /// (or in the future can be used for early proposal closure).
     Finalize,
+    /// Move a proposal to the hub to shift into another DAO.
+    MoveToHub,
 }
 
 impl Action {

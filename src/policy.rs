@@ -1,3 +1,7 @@
+///default_policy, threshold not in scope , line 161, 322,334,336
+///trait bound rolepermission of near_sdk not saisfied, line 136
+
+
 use std::cmp::min;
 use std::collections::{HashMap, HashSet};
 
@@ -6,7 +10,7 @@ use near_sdk::json_types::{U128, U64};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{env, AccountId, Balance};
 
-use crate::proposals::{PolicyParameters, Proposal, ProposalKind, ProposalStatus, Vote};
+use crate::proposals::{Proposal, ProposalKind, ProposalStatus, Vote};
 use crate::types::Action;
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
@@ -56,6 +60,9 @@ impl RoleKind {
     }
 }
 
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, PartialEq)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Debug))]
+#[serde(crate = "near_sdk::serde")]
 pub struct RolePermission{
     pub name : String,
     pub kind : RoleKind,
@@ -79,7 +86,14 @@ pub enum WeightOrRatio {
 }
 
 impl WeightOrRatio{
-    Ratio::(u64, u64),
+    pub fn to_weight(&self, total_weight: Balance) -> Balance {
+        match self {
+            WeightOrRatio::Ratio(num, denom) => min(
+                (*num as u128 * total_weight) / *denom as u128 + 1,
+                total_weight,
+            ),
+        }
+    }
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, PartialEq)]
@@ -195,22 +209,6 @@ impl Policy {
     pub fn update_default_vote_policy(&mut self, vote_policy: &VotePolicy) {
         self.default_vote_policy = vote_policy.clone();
         env::log_str("Successfully updated the default vote policy.");
-    }
-
-    pub fn update_parameters(&mut self, parameters: &PolicyParameters) {
-        if parameters.proposal_bond.is_some() {
-            self.proposal_bond = parameters.proposal_bond.unwrap();
-        }
-        if parameters.proposal_period.is_some() {
-            self.proposal_period = parameters.proposal_period.unwrap();
-        }
-        if parameters.bounty_bond.is_some() {
-            self.bounty_bond = parameters.bounty_bond.unwrap();
-        }
-        if parameters.bounty_forgiveness_period.is_some() {
-            self.bounty_forgiveness_period = parameters.bounty_forgiveness_period.unwrap();
-        }
-        env::log_str("Successfully updated the policy parameters.");
     }
 
     pub fn add_member_to_role(&mut self, role: &String, member_id: &AccountId) {
