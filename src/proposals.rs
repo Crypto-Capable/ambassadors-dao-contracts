@@ -1,8 +1,6 @@
-///impl contract, proposalkind::something{params} , expected identifier , line 248,257,266,274,282,290
-///proc macro derive panicked , line 72
+///impl contract, expected value but found string line 255,256,258,269,271,284,285,296,297,309,319,320
 ///struct proposal , expected type but found variant, line 89,94,96,97,98,99
-///matching proposal inside impl contract , expected value but found struct variant, line 248, 253,262, 270,278,286,
-///struct proposal, cannot infer type enum, line 138,
+///matching proposal inside impl contract , expected value but found &, line 248, 252,263, 267,276,290,302,314
 
 
 
@@ -85,12 +83,12 @@ pub enum ProposalKind{
     AddMemberToRole{ member_id: AccountId, role: String },
     RemoveMemberFromRole { member_id: AccountId, role: String },
     Hackathon {
-        created_at: SystemTime::now(),
+        created_at: U64::from<env::block_timestamp()>,
         info: ProposalInfoKind::HackathonInfo,
     },
 
     MemeContest{
-        created_at : SystemTime::now(),
+        created_at : U64::from<env::block_timestamp()>,
         info : ProposalInfoKind::MemeContestInfo,
     },
     HackathonCompleted{ info: ProposalInfoKind::HackathonCompletedInfo },
@@ -245,12 +243,18 @@ impl Contract{
                 self.policy.set(&VersionedPolicy::Current(new_policy));
                 PromiseOrValue::Value(())
             }
-            ProposalKind::Hackathon{mut self, info : &ProposalInfoKind:: HackathonInfo} => {
+            ProposalKind::Hackathon{&mut self, info : &ProposalInfoKind:: HackathonInfo} => {
                 let id = self.last_proposal_id;
                 self.proposals.insert(
                     Promise::new(ProposalKind::Hackathon {
-                        create_at : SystemTime.now(),
-                        info: ProposalInfoKind::HackathonInfo,
+                        create_at : U64::from<env::block_timestamp()>,
+                        info: ProposalInfoKind::HackathonInfo{
+                            expected_registration: U128,
+                            colleges: String,
+                            marketing_plan: String,
+                            budget_required: U128,
+                            themes_tracks: String,
+                        },
                         })
                     )
             }
@@ -258,8 +262,12 @@ impl Contract{
                 let id = self.last_proposal_id;
                 self.proposals.insert(
                     Promise::new(ProposalKind::MemeContest {
-                        create_at : SystemTime.now(),
-                        info: ProposalInfoKind::MemeContestInfo,
+                        create_at : U64::from<env::block_timestamp()>,
+                        info: ProposalInfoKind::MemeContestInfo{
+                            initial_response: String,
+                            participant_number: U128,
+                            meme_genre: String,
+                        },
                         })
                     )
             }
@@ -267,7 +275,13 @@ impl Contract{
                 let id = self.last_proposal_id;
                 self.proposals.insert(
                     Promise::new(ProposalKind::HackathonCompletedInfo {
-                        info: ProposalInfoKind::HackathonCompletedInfo,
+                        info: ProposalInfoKind::HackathonCompletedInfo{
+                            registration_no: U128,
+                            team_nos: U128,
+                            submission_nos: U128,
+                            winner_submissions: String,
+                            winner_wallets: String,
+                        },
                         })
                     )
             }
@@ -275,7 +289,11 @@ impl Contract{
                 let id = self.last_proposal_id;
                 self.proposals.insert(
                     Promise::new(ProposalKind::MemeContestCompleted {
-                        info: ProposalInfoKind::MemeContestCompletedInfo,
+                        info: ProposalInfoKind::MemeContestCompletedInfo{
+                            memes_no: U128,
+                            winner_submissions: String,
+                            winner_wallets: String,
+                        },
                         })
                     )
             }
@@ -283,7 +301,11 @@ impl Contract{
                 let id = self.last_proposal_id;
                 self.proposals.insert(
                     Promise::new(ProposalKind::Webinar {
-                        info: ProposalInfoKind::WebinarConduct,
+                        info: ProposalInfoKind::WebinarConduct{
+                            registration_no: U128,
+                            attended_no: U128,
+                            webinar_link: String,
+                        },
                         })
                     )
             }
@@ -291,7 +313,10 @@ impl Contract{
                 let id = self.last_proposal_id;
                 self.proposals.insert(
                     Promise::new(ProposalKind::ContentCoordination {
-                        info: ProposalInfoKind::ContentCoordinationInput,
+                        info: ProposalInfoKind::ContentCoordinationInput{
+                            links: String,
+                            descriptive_story: String,
+                        },
                         })
                     )
             }

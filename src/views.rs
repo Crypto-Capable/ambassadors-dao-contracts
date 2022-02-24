@@ -1,4 +1,4 @@
-///cannot infer type for struct proposals:Proposals, line 8
+///cannot infer type for struct proposals:Proposals, line 8 - cleared
 
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
