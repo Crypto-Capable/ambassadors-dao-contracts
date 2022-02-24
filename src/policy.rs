@@ -1,5 +1,5 @@
 ///default_policy, threshold not in scope , line 161, 322,334,336
-///trait bound rolepermission of near_sdk not saisfied, line 136
+///trait bound rolepermission of near_sdk not saisfied, line 136 - cleared
 
 
 use std::cmp::min;
