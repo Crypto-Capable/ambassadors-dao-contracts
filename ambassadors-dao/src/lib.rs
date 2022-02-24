@@ -1,4 +1,4 @@
-//! Contains the Contract struct and it's implementation
+//! Contains the Contract struct and its implementation
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::LookupMap;
 use near_sdk::{near_bindgen, PanicOnDefault};
