@@ -2,10 +2,12 @@ use near_sdk::{env, near_bindgen};
 
 use super::*;
 
+pub type ProposalPayout = Payout<Proposal>;
+
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Clone, Debug))]
 #[serde(crate = "near_sdk::serde")]
-pub enum ProposalKind {
+pub enum Proposal {
     Hackathon {
         expected_registrations: u64,
         estimated_budget: u64,
@@ -21,13 +23,13 @@ pub enum ProposalKind {
     },
 }
 
-impl From<PayoutInput<ProposalKind>> for Payout {
-    fn from(input: PayoutInput<ProposalKind>) -> Self {
+impl From<PayoutInput<Proposal>> for Payout<Proposal> {
+    fn from(input: PayoutInput<Proposal>) -> Self {
         Self {
             proposer: env::predecessor_account_id(),
             description: input.description,
-            info: PayoutInfo::Proposal(input.information),
-            status: PayoutStatus::InProgress,
+            info: input.information,
+            status: PayoutStatus::UnderConsideration,
             votes_count: 0,
             votes: HashMap::default(),
         }
@@ -38,7 +40,7 @@ impl From<PayoutInput<ProposalKind>> for Payout {
 #[near_bindgen]
 impl Contract {
     /// create a proposal payout
-    pub fn add_payout_proposal(&mut self, proposal: PayoutInput<ProposalKind>) -> u64 {
+    pub fn add_payout_proposal(&mut self, proposal: PayoutInput<Proposal>) -> u64 {
         // 1. validate proposal
         // seems like there is nothing to do here
 

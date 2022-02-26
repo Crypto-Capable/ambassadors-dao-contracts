@@ -1,11 +1,16 @@
 //! Contains the Contract struct and its implementation
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::LookupMap;
-use near_sdk::{near_bindgen, PanicOnDefault};
+use near_sdk::near_bindgen;
+use near_sdk::{AccountId, PanicOnDefault};
 
-use payout::Payout;
+use payout::{BountyPayout, Payout, ProposalPayout};
+use policy::Policy;
+use types::Config;
 
 mod payout;
+mod policy;
+mod types;
 mod vote;
 
 pub mod views;
@@ -14,20 +19,30 @@ pub mod views;
 #[near_bindgen]
 #[derive(BorshSerialize, BorshDeserialize, PanicOnDefault)]
 pub struct Contract {
-    proposals: LookupMap<u64, Payout>,
+    policy: Policy,
+    config: Config,
+    proposals: LookupMap<u64, ProposalPayout>,
     last_proposal_id: u64,
-    bounties: LookupMap<u64, Payout>,
+    bounties: LookupMap<u64, BountyPayout>,
     last_bounty_id: u64,
+}
+
+pub struct CreateContractParams {
+    council: Vec<AccountId>,
+    name: String,
+    purpose: String,
 }
 
 #[near_bindgen]
 impl Contract {
     #[init]
-    pub fn new() -> Self {
+    pub fn new(params: CreateContractParams) -> Self {
         Self {
-            proposals: LookupMap::<u64, Payout>::new(b"p".to_vec()),
+            policy: Policy::from(params.council),
+            config: Config::new(params.name, params.purpose),
+            proposals: LookupMap::<u64, ProposalPayout>::new(b"p".to_vec()),
             last_proposal_id: 0,
-            bounties: LookupMap::<u64, Payout>::new(b"b".to_vec()),
+            bounties: LookupMap::<u64, BountyPayout>::new(b"b".to_vec()),
             last_bounty_id: 0,
         }
     }

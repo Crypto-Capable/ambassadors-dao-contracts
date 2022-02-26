@@ -2,10 +2,12 @@ use near_sdk::{env, near_bindgen};
 
 use super::*;
 
+pub type BountyPayout = Payout<Bounty>;
+
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Clone, Debug))]
 #[serde(crate = "near_sdk::serde")]
-pub enum BountyKind {
+pub enum Bounty {
     HackathonCompletion {
         num_of_registrations: u64,
         num_of_submissions: u64,
@@ -29,13 +31,13 @@ pub enum BountyKind {
     },
 }
 
-impl From<PayoutInput<BountyKind>> for Payout {
-    fn from(input: PayoutInput<BountyKind>) -> Self {
+impl From<PayoutInput<Bounty>> for Payout<Bounty> {
+    fn from(input: PayoutInput<Bounty>) -> Self {
         Self {
             proposer: env::predecessor_account_id(),
             description: input.description,
-            info: PayoutInfo::Bounty(input.information),
-            status: PayoutStatus::InProgress,
+            info: input.information,
+            status: PayoutStatus::UnderConsideration,
             votes_count: 0,
             votes: HashMap::default(),
         }
@@ -46,7 +48,7 @@ impl From<PayoutInput<BountyKind>> for Payout {
 #[near_bindgen]
 impl Contract {
     /// create a bounty payout
-    pub fn add_payout_bounty(&mut self, bounty: PayoutInput<BountyKind>) -> u64 {
+    pub fn add_payout_bounty(&mut self, bounty: PayoutInput<Bounty>) -> u64 {
         // 1. validate bounty
         // seems like there is nothing to do here
 
