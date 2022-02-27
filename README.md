@@ -174,3 +174,11 @@ near view $SPUTNIK_ID get_policy
 
 </p>
 </details>
+
+## Details
+
+### Roles and Permissions
+
+There are two roles in this DAO, the council and the ambassadors. There are some actions that can only be done by the council such as Voting on different Payouts. For implementation of these permissions, we have a method on the `Policy.council` field called `is_council_member` that says if an AccountId belongs to the council.
+
+The tokens belonging to a contract can be accessed through the `env::account_balance()` module and every method requiring a token transfer from the user is done by using the `#[payable]` macro and the attached tokens can be found using `env::attached_deposit()`. For some method calls, token transfer will be done from the contract to the user, this can be done using `Promise::new(account_id).transfer(amount)`.
