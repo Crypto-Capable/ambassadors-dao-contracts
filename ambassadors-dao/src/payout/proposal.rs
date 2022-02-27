@@ -41,11 +41,9 @@ impl From<PayoutInput<Proposal>> for Payout<Proposal> {
 impl Contract {
     /// create a proposal payout
     pub fn add_payout_proposal(&mut self, proposal: PayoutInput<Proposal>) -> u64 {
-        // 1. validate proposal
-        // seems like there is nothing to do here
+        // validate input, seems like there is nothing to do here
 
-        // 2. check permission of the caller to add this type of a proposal
-        // waiting for permissions, roles and actions from @shreyas
+        // anyone can create this, no permission checks needed
 
         // 3. add the proposal to Contract.proposals
         let new_id = self.last_proposal_id + 1;

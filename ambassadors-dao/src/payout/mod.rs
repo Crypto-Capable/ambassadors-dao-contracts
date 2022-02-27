@@ -6,11 +6,13 @@ use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::AccountId;
 
 pub use bounty::{Bounty, BountyPayout};
+pub use miscellaneous::{Miscellaneous, MiscellaneousPayout};
 pub use proposal::{Proposal, ProposalPayout};
 
 use crate::*;
 
 mod bounty;
+mod miscellaneous;
 mod proposal;
 
 /// The URL to any resource on the internet
@@ -73,8 +75,6 @@ pub struct Payout<T> {
 
 // TODO: referrals and miscellaneous payout info kinds
 // TODO: implementation of adding proposals, acting on proposals, and executing proposals
-// TODO: figure out where the tokens are stored in a smart contract
-// TODO: figure out roles and permissions
 
 #[near_bindgen]
 impl Contract {}

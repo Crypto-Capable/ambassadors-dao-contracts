@@ -49,11 +49,9 @@ impl From<PayoutInput<Bounty>> for Payout<Bounty> {
 impl Contract {
     /// create a bounty payout
     pub fn add_payout_bounty(&mut self, bounty: PayoutInput<Bounty>) -> u64 {
-        // 1. validate bounty
-        // seems like there is nothing to do here
+        // validate input, seems like there is nothing to do here
 
-        // 2. check permission of the caller to add this type of a bounty
-        // waiting for permissions, roles and actions from @shreyas
+        // anyone can create this, no permission checks needed
 
         // 3. add the bounty to Contract.bountys
         let new_id = self.last_bounty_id + 1;
