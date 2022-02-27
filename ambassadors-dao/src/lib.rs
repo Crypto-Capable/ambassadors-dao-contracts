@@ -4,7 +4,7 @@ use near_sdk::collections::LookupMap;
 use near_sdk::near_bindgen;
 use near_sdk::{AccountId, PanicOnDefault};
 
-use payout::{BountyPayout, Payout, ProposalPayout};
+use payout::{BountyPayout, MiscellaneousPayout, Payout, ProposalPayout};
 use policy::Policy;
 use types::Config;
 
@@ -25,6 +25,8 @@ pub struct Contract {
     last_proposal_id: u64,
     bounties: LookupMap<u64, BountyPayout>,
     last_bounty_id: u64,
+    miscellaneous: LookupMap<u64, MiscellaneousPayout>,
+    last_miscellaneous_id: u64,
 }
 
 pub struct CreateContractParams {
@@ -44,6 +46,8 @@ impl Contract {
             last_proposal_id: 0,
             bounties: LookupMap::<u64, BountyPayout>::new(b"b".to_vec()),
             last_bounty_id: 0,
+            miscellaneous: LookupMap::<u64, MiscellaneousPayout>::new(b"m".to_vec()),
+            last_miscellaneous_id: 0,
         }
     }
 }
