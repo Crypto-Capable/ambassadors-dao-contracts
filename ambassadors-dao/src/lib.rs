@@ -2,6 +2,7 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::LookupMap;
 use near_sdk::near_bindgen;
+use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{AccountId, PanicOnDefault};
 
 use payout::{BountyPayout, MiscellaneousPayout, Payout, ProposalPayout};
@@ -29,6 +30,9 @@ pub struct Contract {
     last_miscellaneous_id: u64,
 }
 
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Clone, Debug))]
+#[serde(crate = "near_sdk::serde")]
 pub struct CreateContractParams {
     council: Vec<AccountId>,
     name: String,

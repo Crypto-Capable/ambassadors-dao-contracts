@@ -33,8 +33,7 @@ pub struct SubmissionInfo {
 pub enum PayoutStatus {
     Approved,
     Rejected,
-    Removed,
-    Expired,
+    Finalized,
     UnderConsideration,
 }
 

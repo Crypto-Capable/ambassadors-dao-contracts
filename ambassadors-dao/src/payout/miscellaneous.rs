@@ -42,5 +42,11 @@ impl Contract {
         new_id
     }
     /// act on a miscellaneous payout
-    pub fn act_payout_miscellaneous(&mut self, id: u64, action: String, note: Option<String>) {}
+    pub fn act_payout_miscellaneous(
+        &mut self,
+        id: u64,
+        action: types::Action,
+        note: Option<String>,
+    ) {
+    }
 }

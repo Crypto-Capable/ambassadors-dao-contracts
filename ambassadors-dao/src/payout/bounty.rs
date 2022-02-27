@@ -60,5 +60,5 @@ impl Contract {
         new_id
     }
     /// act on a bounty payout
-    pub fn act_payout_bounty(&mut self, id: u64, action: String, note: Option<String>) {}
+    pub fn act_payout_bounty(&mut self, id: u64, action: types::Action, note: Option<String>) {}
 }
