@@ -29,8 +29,6 @@ impl Config {
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Debug)]
 #[serde(crate = "near_sdk::serde")]
 pub enum Action {
-    /// adding a payout
-    AddPayout,
     /// remove a payout
     RemovePayout,
     /// approval vote for a payout
