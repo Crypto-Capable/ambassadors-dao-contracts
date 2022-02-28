@@ -62,5 +62,41 @@ impl Contract {
     /// act on a bounty payout
     pub fn act_payout_bounty(&mut self, id: u64, action: types::Action, note: Option<String>) {
 
+        // check if bounty exists
+        // let the council vote: 
+        // if approved, vote count will be increased by 1
+        // if rejected , vote count will be decresaed by 1,
+        // if removed, it will be removed with a note as to why not worthy
+
+        let mut bounty = match self.bounties.get(&id){
+            // match the id and checking if such a bounty exists and returning error or existance
+            Some(b) = b;
+            None => {
+                panic!("NO_SUCH_BOUNTY_EXISTS");
+            }
+        };
+        // match the environment signer, give him different vote options, basis on counil or not
+        match action {
+            types::Action::RemovePayout => {
+                if env::signer_account_id() = bounty.proposer{
+                    bounty.status = PayoutStatus::Removed(note);
+                }
+                else panic!("ACTION_NOT_PERMITTED");
+            }
+            types::Action::VoteApprove => {
+                if !self.policy.is_council_member(&env::signer_account_id()){
+                    panic!("NOT_PERMITTED");
+                }
+                bounty.votes.insert(env::signer_account_id, vote::Vote::from(action));
+                bounty.votes_count.approve_count += 1;
+            }
+            types::Action::VoteReject => {
+                if !self.policy.is_council_member(&env::signer_account_id()){
+                    panic!("NOT_PERMITTED");
+                }
+                bounty.votes_count.reject_count += 1;
+                bounty.votes.insert(env::signer_account_id(), vote:Vote::from(action));
+            }
+        }
     }
 }
