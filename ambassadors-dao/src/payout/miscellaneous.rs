@@ -20,7 +20,7 @@ impl From<PayoutInput<Miscellaneous>> for Payout<Miscellaneous> {
             description: input.description,
             info: input.information,
             status: PayoutStatus::UnderConsideration,
-            votes_count: 0,
+            votes_count: VotesCount::new(),
             votes: HashMap::default(),
         }
     }

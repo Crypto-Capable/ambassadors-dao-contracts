@@ -38,7 +38,7 @@ impl From<PayoutInput<Bounty>> for Payout<Bounty> {
             description: input.description,
             info: input.information,
             status: PayoutStatus::UnderConsideration,
-            votes_count: 0,
+            votes_count: VotesCount::new(),
             votes: HashMap::default(),
         }
     }
@@ -60,5 +60,7 @@ impl Contract {
         new_id
     }
     /// act on a bounty payout
-    pub fn act_payout_bounty(&mut self, id: u64, action: types::Action, note: Option<String>) {}
+    pub fn act_payout_bounty(&mut self, id: u64, action: types::Action, note: Option<String>) {
+
+    }
 }

@@ -30,7 +30,7 @@ impl From<PayoutInput<Proposal>> for Payout<Proposal> {
             description: input.description,
             info: input.information,
             status: PayoutStatus::UnderConsideration,
-            votes_count: 0,
+            votes_count: VotesCount::new(),
             votes: HashMap::default(),
         }
     }
@@ -52,5 +52,37 @@ impl Contract {
         new_id
     }
     /// act on a proposal payout
-    pub fn act_payout_proposal(&mut self, id: u64, action: types::Action, note: Option<String>) {}
+    pub fn act_payout_proposal(&mut self, id: u64, action: types::Action, note: Option<String>) {
+        // check if proposal with id exists
+        let mut proposal = match self.proposals.get(&id) {
+            Some(p) => p,
+            None => {
+                panic!("ERR_PROPOSAL_NOT_FOUND");
+            }
+        };
+        let signer = env::signer_account_id();
+        // check if the user is authorized to take the action
+        match action {
+            types::Action::RemovePayout => {
+                if signer != proposal.proposer {
+                    panic!("ERR_NOT_PERMITTED");
+                }
+                proposal.status = PayoutStatus::Removed(note);
+            }
+            types::Action::VoteReject => {
+                if !self.policy.is_council_member(&signer) {
+                    panic!("ERR_NOT_PERMITTED");
+                }
+                proposal.votes.insert(signer, vote::Vote::from(action));
+                proposal.votes_count.reject_count += 1;
+            }
+            types::Action::VoteApprove => {
+                if !self.policy.is_council_member(&signer) {
+                    panic!("ERR_NOT_PERMITTED");
+                }
+                proposal.votes.insert(signer, vote::Vote::from(action));
+                proposal.votes_count.approve_count += 1;
+            }
+        }
+    }
 }
