@@ -10,6 +10,9 @@ use payout::{Bounty, Proposal};
 
 use crate::*;
 
+/// TODO: Get payout input fields, for that create a derive proc_macro
+/// and put it on each of the enums and required structs
+
 /// This is format of output via JSON for the payout.
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
