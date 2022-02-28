@@ -16,6 +16,9 @@ mod vote;
 
 pub mod views;
 
+// TODO: create a proc_macro for generate meta data about the type of information
+// that each Payout type needs for creation
+
 /// The main contract governing Ambassadors DAO
 #[near_bindgen]
 #[derive(BorshSerialize, BorshDeserialize, PanicOnDefault)]
