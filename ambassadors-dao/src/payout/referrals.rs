@@ -8,12 +8,12 @@ use super::*;
 struct Refferal{
      campusambassador : env::predecessor_account_id(),
      ref_id : String,
-     connect = HashMap<campusambassador, ref_id>,
+     connect : HashMap<campusambassador, ref_id>,
 }
 
 impl Refferal{
 // create a random number and assign to campus ambassador
-    pub fn generate_randon_no(&mut self) -> String{
+    pub fn generate_random_no(&mut self) -> String{
         let rand_string: String = thread_rng()
         .sample_iter(&Alphanumeric)
         .take(30)
@@ -27,7 +27,7 @@ impl Refferal{
 
 #[near_bindgen]
 impl Contract {
-    pub fn check_random_number(&self, ref_id : generate_randon_no()) {
+    pub fn check_random_number(&self, ref_id : String) {
         // check the input ref id is associated with any campus ambassador
 
         // if yes, return the id of the campus ambassador
