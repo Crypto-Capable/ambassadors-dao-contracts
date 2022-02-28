@@ -34,6 +34,7 @@ pub enum PayoutStatus {
     Approved,
     Rejected,
     Finalized,
+    Removed(Option<String>),
     UnderConsideration,
 }
 
@@ -53,6 +54,23 @@ pub struct PayoutInput<T> {
     information: T,
 }
 
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Clone, Debug))]
+#[serde(crate = "near_sdk::serde")]
+pub struct VotesCount {
+    approve_count: u64,
+    reject_count: u64,
+}
+
+impl VotesCount {
+    pub fn new() -> Self {
+        Self {
+            approve_count: 0,
+            reject_count: 0,
+        }
+    }
+}
+
 /// A Payout is a type of payout. Depeding on the type of the Payout
 /// a set of information is required.
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
@@ -69,10 +87,10 @@ pub struct Payout<T> {
     /// the of individual votes on the Payout
     pub votes: HashMap<AccountId, vote::Vote>,
     /// the total vote count, updated whenever the votes are updated
-    pub votes_count: u64,
+    pub votes_count: VotesCount,
 }
 
-// TODO: referrals and miscellaneous payout info kinds
+// TODO: referral payouts
 // TODO: implementation of adding proposals, acting on proposals, and executing proposals
 
 #[near_bindgen]
