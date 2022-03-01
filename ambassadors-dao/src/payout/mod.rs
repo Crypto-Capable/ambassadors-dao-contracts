@@ -107,20 +107,20 @@ impl Contract {
         match action {
             types::Action::RemovePayout => {
                 if signer != payout.proposer {
-                    panic!("ERR_NOT_PERMITTED");
+                    panic!("{}", error::ErrNotPermitted);
                 }
                 payout.status = PayoutStatus::Removed(note);
             }
             types::Action::VoteReject => {
                 if !self.policy.is_council_member(&signer) {
-                    panic!("ERR_NOT_PERMITTED");
+                    panic!("{}", error::ErrNotPermitted);
                 }
                 payout.votes.insert(signer, vote::Vote::from(action));
                 payout.votes_count.reject_count += 1;
             }
             types::Action::VoteApprove => {
                 if !self.policy.is_council_member(&signer) {
-                    panic!("ERR_NOT_PERMITTED");
+                    panic!("{}", error::ErrNotPermitted);
                 }
                 payout.votes.insert(signer, vote::Vote::from(action));
                 payout.votes_count.approve_count += 1;

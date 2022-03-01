@@ -57,7 +57,7 @@ impl Contract {
         let mut proposal = match self.proposals.get(&id) {
             Some(p) => p,
             None => {
-                panic!("{}", error::Error::ProposalNotFound);
+                panic!("{}", error::ErrProposalNotFound);
             }
         };
         self.internal_act_payout(&mut proposal, action, note);

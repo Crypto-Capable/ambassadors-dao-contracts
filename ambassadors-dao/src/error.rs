@@ -1,26 +1,5 @@
-use std::fmt::{Display, Formatter, Result};
-
-#[derive(Debug)]
-pub enum Error {
-    NotPermitted,
-    ProposalNotFound,
-    BountyNotFound,
-    MiscellaneousNotFound,
-    ReferralNotFound,
-}
-
-impl Display for Error {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Error::NotPermitted => "ERR_NOT_PERMITTED",
-                Error::ProposalNotFound => "ERR_PROPOSAL_NOT_FOUND",
-                Error::BountyNotFound => "ERR_BOUNTY_NOT_FOUND",
-                Error::MiscellaneousNotFound => "ERR_MISCELLANEOUS_NOT_FOUND",
-                Error::ReferralNotFound => "ERR_REFERRAL_NOT_FOUND",
-            }
-        )
-    }
-}
+pub const ErrNotPermitted: &str = "ERR_NOT_PERMITTED";
+pub const ErrProposalNotFound: &str = "ERR_PROPOSAL_NOT_FOUND";
+pub const ErrBountyNotFound: &str = "ERR_BOUNTY_NOT_FOUND";
+pub const ErrMiscellaneousNotFound: &str = "ERR_MISCELLANEOUS_NOT_FOUND";
+pub const ErrReferralNotFound: &str = "ERR_REFERRAL_NOT_FOUND";
