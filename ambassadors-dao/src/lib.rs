@@ -44,9 +44,9 @@ pub struct Contract {
     /// the id of the last proposal
     last_miscellaneous_id: u64,
     /// store the referral ids as a map of <referral-id, account-id>
-    referral_ids: LookupMap<String, String>,
+    referral_ids: LookupMap<String, AccountId>,
     // store the current USD conversion rate, conversion_rate == 1 Near token
-    // conversion_rate: Arc<Mutex<Option<f32>>>,
+    // conversion_rate: Option<f32>,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
@@ -71,22 +71,6 @@ impl Contract {
         if params.purpose.len() == 0 {
             panic!("ERR_PURPOSE_EMPTY");
         }
-        // let conversion_rate = Arc::new(Mutex::new(Option<f32>::None));
-        // let conversion_rate_clone = Arc::clone(&conversion_rate);
-        // let join_handler = thread::spawn(move || {
-        // fetch data and update the conversion rate
-        // let agent: Agent = ureq::AgentBuilder::new()
-        //     .timeout_read(Duration::from_secs(5))
-        //     .timeout_write(Duration::from_secs(5))
-        //     .build();
-        // loop {
-        // let body: String = agent.get("https://helper.mainnet.near.org/fiat")
-        //     .call()?
-        //     .into_string()?;
-        // update on the contract struct
-        // thread::sleep(std::time::Duration::from_secs(2));
-        // }
-        // });
         Self {
             policy: Policy::from(params.council),
             config: Config::new(params.name, params.purpose),
@@ -102,7 +86,7 @@ impl Contract {
                     params
                         .council
                         .iter()
-                        .map(|id| (Self::internal_generate_referral_id(), id.to_string())),
+                        .map(|id| (Self::internal_generate_referral_id(), id.clone())),
                 );
                 map
             },
@@ -122,14 +106,14 @@ impl Contract {
         // create a referral token
         let ref_token = Self::internal_generate_referral_id();
         self.referral_ids
-            .insert(&String::from(env::signer_account_id()), &ref_token);
+            .insert(&ref_token, &env::signer_account_id());
 
         // check if there was a token passed
         if let Some(token) = token {
             match self.referral_ids.get(&token) {
                 Some(id) => {
-                    Promise::new(AccountId::new_unchecked(token))
-                        .transfer(5 / 10 * types::ONE_NEAR);
+                    // Promise::new(AccountId::new_unchecked(token))
+                    //     .transfer(5 / 10 * types::ONE_NEAR);
                 }
                 None => {}
             }
