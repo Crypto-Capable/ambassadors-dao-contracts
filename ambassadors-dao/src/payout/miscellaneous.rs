@@ -56,7 +56,7 @@ impl Contract {
         };
         match action {
             types::Action::RemovePayout => {
-                if env::signer_account_id() = extras.proposer{
+                if env::signer_account_id() == extras.proposer{
                     extras.status = PayoutStatus::Removed(note);
                 }
                 else {

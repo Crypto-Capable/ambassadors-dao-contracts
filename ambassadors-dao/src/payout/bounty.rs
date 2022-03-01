@@ -70,7 +70,7 @@ impl Contract {
 
         let mut bounty = match self.bounties.get(&id){
             // match the id and checking if such a bounty exists and returning error or existance
-            Some(b) => b,
+            Some(b) => b;
             None => {
                 panic!("NO_SUCH_BOUNTY_EXISTS");
             }
@@ -78,7 +78,7 @@ impl Contract {
         // match the environment signer, give him different vote options, basis on counil or not
         match action {
             types::Action::RemovePayout => {
-                if env::signer_account_id() = bounty.proposer{
+                if env::signer_account_id() == bounty.proposer{
                     bounty.status = PayoutStatus::Removed(note);
                 }
                 else { 
