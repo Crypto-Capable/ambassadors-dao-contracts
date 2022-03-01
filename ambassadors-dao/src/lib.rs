@@ -9,6 +9,7 @@ use payout::{BountyPayout, MiscellaneousPayout, Payout, ProposalPayout};
 use policy::Policy;
 use types::Config;
 
+mod error;
 mod payout;
 mod policy;
 mod types;
