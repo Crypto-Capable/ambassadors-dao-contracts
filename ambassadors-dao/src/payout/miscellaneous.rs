@@ -51,7 +51,7 @@ impl Contract {
         let extras = match self.miscellaneous.get(&id){
             Some(m) => m,
             None => {
-                panic!("NOT_FOUND");
+                panic!("ERR_MISC_PAYOUT_NOT_FOUND");
             }
         };
         match action {
@@ -59,18 +59,20 @@ impl Contract {
                 if env::signer_account_id() = extras.proposer{
                     extras.status = PayoutStatus::Removed(note);
                 }
-                else panic!("ACTION_NOT_PERMITTED");
+                else {
+                    panic!("ACTION_NOT_PERMITTED");
+                }
             }
             types::Action::VoteApprove => {
                 if !self.policy.is_council_member(&env::signer_account_id()){
-                    panic!("NOT_PERMITTED");
+                    panic!("ERR_ACTION_NOT_PERMITTED");
                 }
                 extras.votes.insert(env::signer_account_id, vote::Vote::from(action));
                 extras.votes_count.approve_count += 1;
             }
             types::Action::VoteReject => {
                 if !self.policy.is_council_member(&env::signer_account_id()){
-                    panic!("NOT_PERMITTED");
+                    panic!("ERR_ACTION_NOT_PERMITTED");
                 }
                 extras.votes_count.reject_count += 1;
                 extras.votes.insert(env::signer_account_id(), vote:Vote::from(action));
