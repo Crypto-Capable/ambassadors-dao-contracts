@@ -1,3 +1,4 @@
+use near_sdk::Balance;
 use near_sdk::{env, near_bindgen};
 
 use super::*;
@@ -9,16 +10,25 @@ pub type ProposalPayout = Payout<Proposal>;
 #[serde(crate = "near_sdk::serde")]
 pub enum Proposal {
     Hackathon {
+        /// number of expected registrations in the hackathon
         expected_registrations: u64,
-        estimated_budget: u64,
+        /// estimated budget required for the hackathon in near tokens
+        estimated_budget: Balance,
+        /// s3 link to a PDF with details of the proposal
         supporting_document: ResourceLink,
     },
     MemeContest {
+        /// number of expected registrations in the meme contest
         expected_registrations: u64,
-        estimated_budget: u64,
+        /// estimated budget required for the meme contest in near tokens
+        estimated_budget: Balance,
+        /// s3 link to a PDF with details of the proposal
         supporting_document: ResourceLink,
     },
     Open {
+        /// estimated budget required for the proposal in near tokens
+        estimated_budget: Balance,
+        /// s3 link to a PDF with details of the proposal
         supporting_document: ResourceLink,
     },
 }
@@ -45,7 +55,7 @@ impl Contract {
 
         // anyone can create this, no permission checks needed
 
-        // 3. add the proposal to Contract.proposals
+        // add the proposal to Contract.proposals
         let new_id = self.last_proposal_id + 1;
         self.proposals.insert(&new_id, &Payout::from(proposal));
         self.last_proposal_id = new_id;
@@ -56,10 +66,28 @@ impl Contract {
         // check if proposal with id exists
         let mut proposal = match self.proposals.get(&id) {
             Some(p) => p,
-            None => {
-                panic!("{}", error::ErrProposalNotFound);
-            }
+            None => panic!("{}", error::ErrProposalNotFound),
         };
+        // if proposal is not under consideration, it is final
+        match proposal.status {
+            PayoutStatus::UnderConsideration => {}
+            _ => panic!("{}: {}", error::ErrNotPermitted, "payout finalized"),
+        }
         self.internal_act_payout(&mut proposal, action, note);
+        // check if payout state is approved
+        if proposal.status == PayoutStatus::Approved {
+            let tokens = match proposal.info {
+                Proposal::Hackathon {
+                    estimated_budget, ..
+                } => estimated_budget,
+                Proposal::MemeContest {
+                    estimated_budget, ..
+                } => estimated_budget,
+                Proposal::Open {
+                    estimated_budget, ..
+                } => estimated_budget,
+            };
+            Promise::new(proposal.proposer).transfer(tokens);
+        }
     }
 }

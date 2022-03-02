@@ -55,5 +55,6 @@ impl Contract {
             }
         };
         self.internal_act_payout(&mut miscellaneous, action, note);
+        // TODO: payout amounts not very clear
     }
 }

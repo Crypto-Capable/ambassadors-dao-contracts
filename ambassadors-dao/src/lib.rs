@@ -12,6 +12,7 @@ use payout::{BountyPayout, MiscellaneousPayout, Payout, ProposalPayout};
 use policy::Policy;
 use types::Config;
 
+mod amounts;
 mod error;
 mod payout;
 mod policy;
@@ -103,19 +104,15 @@ impl Contract {
 
     /// Perform required actions when an ambassador registers
     pub fn register_ambassador(&mut self, token: Option<String>) -> String {
-        // create a referral token
+        // create a referral token for the new ambassador
         let ref_token = Self::internal_generate_referral_id();
         self.referral_ids
             .insert(&ref_token, &env::signer_account_id());
 
-        // check if there was a token passed
+        // check if there was a referral token used by the new ambassador
         if let Some(token) = token {
-            match self.referral_ids.get(&token) {
-                Some(id) => {
-                    // Promise::new(AccountId::new_unchecked(token))
-                    //     .transfer(5 / 10 * types::ONE_NEAR);
-                }
-                None => {}
+            if let Some(id) = self.referral_ids.get(&token) {
+                Promise::new(id).transfer(amounts::CARegisterReferralAmount);
             }
         }
 

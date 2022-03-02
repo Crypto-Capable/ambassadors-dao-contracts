@@ -94,6 +94,8 @@ pub struct Payout<T> {
 
 #[near_bindgen]
 impl Contract {
+    /// Acts on the payout according to the action passed.
+    /// Also changes the status of the payout if deemed so.
     #[private]
     pub fn internal_act_payout<T>(
         &self,

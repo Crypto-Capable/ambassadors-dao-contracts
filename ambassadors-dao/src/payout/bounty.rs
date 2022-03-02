@@ -9,24 +9,35 @@ pub type BountyPayout = Payout<Bounty>;
 #[serde(crate = "near_sdk::serde")]
 pub enum Bounty {
     HackathonCompletion {
+        /// number of registrations
         num_of_registrations: u64,
+        /// number of submissions
         num_of_submissions: u64,
-        // order of the winners w.r.to their ranks
+        /// information of the winners
+        /// order of the winners w.r.to their ranks
         winners_info: Vec<SubmissionInfo>,
     },
     MemeContestCompletion {
+        /// number of submissions
         num_of_submissions: u64,
-        // order of the winners w.r.to their ranks
+        /// information of the winners
+        /// order of the winners w.r.to their ranks
         winners_info: Vec<SubmissionInfo>,
     },
     Webinar {
+        /// number of registrations
         num_of_registrations: u64,
+        /// number of attendees
         num_of_attendees: u64,
+        /// link to the webinar meeting
         webinar_link: ResourceLink,
     },
     ContentCoordniation {
+        /// a list of links to the content
         content_links: Vec<ResourceLink>,
+        /// a brief summary about the story of creation of the content
         story: String,
+        /// a list of the name of tools used
         tools_used: Vec<String>,
     },
 }
@@ -68,5 +79,15 @@ impl Contract {
             }
         };
         self.internal_act_payout(&mut bounty, action, note);
+        // check if payout state is approved
+        if bounty.status == PayoutStatus::Approved {
+            let tokens = match bounty.info {
+                Bounty::HackathonCompletion { .. } => amounts::HackathonCompletionAmount,
+                Bounty::MemeContestCompletion { .. } => amounts::MemeContestCompletionAmount,
+                Bounty::Webinar { .. } => amounts::WebinarCompletionAmount,
+                Bounty::ContentCoordniation { .. } => amounts::ContentCoordinationAmount,
+            };
+            Promise::new(bounty.proposer).transfer(tokens);
+        }
     }
 }
