@@ -38,7 +38,7 @@ impl Contract {
                 self.proposals.get(&id).map(|p| PayoutOutput{id, payout: p})
             }).collect()
         }
-        // check
+        // signer's proposal paginated output logic to be implemented
         else {
             (start_index..min(self.last_proposal_id, start_index+limit)).filter_map(|id|{
                 self.proposals.get(&id).map(|p| PayoutOutput{id, payout: p})
@@ -51,7 +51,7 @@ impl Contract {
                 self.bounties.get(&id).map(|b| PayoutOutput{id, payout: b})
             }).collect()
         }
-        // check
+        // signer's bounty paginated output logic to be implemented
         else{
             (start_index..min(self.last_bounty_id, start_index+limit)).filter_map(|id|{
                 self.bounties.get(&id).map(|b| PayoutOutput{id, payout: b})
@@ -64,7 +64,7 @@ impl Contract {
                 self.miscellaneous.get(&id).map(|m| PayoutOutput{id, payout: m})
             }).collect()
         } 
-        // check
+        // signer's miscellanous paginated output logic to be implemented
         else{
             (start_index..min(self.last_miscellaneous_id, start_index+limit)).filter_map(|id|{
                 self.miscellaneous.get(&id).map(|m| PayoutOutput{id, payout: m})
@@ -80,12 +80,9 @@ impl Contract {
             id,
             payout: proposal,
             }
-        } // need check
+        } // panic if not authorized
         else{
-            PayoutOutput{
-                id,
-                payout: proposal,
-            }
+            panic!("{}", error::ErrProposalNotFound);
         }
     }
 
@@ -97,12 +94,9 @@ impl Contract {
             id,
             payout: bounty,
             }
-        } // need check
+        } // panic if not authorized
         else{
-            PayoutOutput{
-                id,
-                payout : bounty,
-            }
+            panic!("{}", error::ErrBountyNotFound);
         }
     }
 
@@ -114,12 +108,9 @@ impl Contract {
             id,
             payout: miscellaneous,
             }
-        } // need check
+        } //panic if not authorized
         else{
-            PayoutOutput {
-                id,
-                payout: miscellaneous,
-                }
+            panic!("{}", error::ErrMiscellaneousNotFound);
         }
     }
 
