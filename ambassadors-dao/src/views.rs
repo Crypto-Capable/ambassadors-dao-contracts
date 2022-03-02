@@ -1,12 +1,13 @@
+// implement multiple proposal based on proposer
+
+
 use std::cmp::min;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::env;
-use near_sdk::json_types::{Base58CryptoHash, U128};
 use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::CryptoHash;
 
-use payout::{Bounty, Proposal};
+use payout::{Bounty, Proposal, Miscellaneous};
 
 use crate::*;
 
@@ -25,81 +26,116 @@ pub struct PayoutOutput<T> {
 
 #[near_bindgen]
 impl Contract {
-    /// Returns semver of this contract.
-    pub fn version(&self) -> String {
-        env!("CARGO_PKG_VERSION").to_string()
+    // paginated view
+    // if env signer is council: then they can have paginated view of payouts
+    // if env signer is not council: then they will have only payouts they have added
+
+
+    pub fn get_proposals(&self, start_index: u64, limit: u64) -> Vec<PayoutOutput<Proposal>>{
+        let signer = env::signer_account_id();
+        if self.policy.is_council_member(&signer){
+            (start_index..min(self.last_proposal_id, start_index+limit)).filter_map(|id|{
+                self.proposals.get(&id).map(|p| PayoutOutput{id, payout: p})
+            }).collect()
+        }
+        // check
+        else {
+            (start_index..min(self.last_proposal_id, start_index+limit)).filter_map(|id|{
+                self.proposals.get(&id).map(|p| PayoutOutput{id, payout: p})
+            }).collect()
+        }
     }
-
-    /// Returns config of this contract.
-    pub fn get_config(&self) -> Config {
-        self.config.clone()
+    pub fn get_bounties(&self, start_index: u64, limit: u64) -> Vec<PayoutOutput<Bounty>>{
+        if self.policy.is_council_member(&env::signer_account_id()){
+            (start_index..min(self.last_bounty_id, start_index+limit)).filter_map(|id|{
+                self.bounties.get(&id).map(|b| PayoutOutput{id, payout: b})
+            }).collect()
+        }
+        // check
+        else{
+            (start_index..min(self.last_bounty_id, start_index+limit)).filter_map(|id|{
+                self.bounties.get(&id).map(|b| PayoutOutput{id, payout: b})
+            }).collect()
+        }
     }
-
-    /// Returns policy of this contract.
-    pub fn get_policy(&self) -> Policy {
-        self.policy.clone()
-    }
-
-    /// Returns if blob with given hash is stored.
-    pub fn has_blob(&self, hash: Base58CryptoHash) -> bool {
-        env::storage_has_key(&CryptoHash::from(hash))
-    }
-
-    /// Returns locked amount of NEAR that is used for storage.
-    pub fn get_locked_storage_amount(&self) -> U128 {
-        let locked_storage_amount = env::storage_byte_cost() * (env::storage_usage() as u128);
-        U128(locked_storage_amount)
-    }
-
-    /// Returns available amount of NEAR that can be spent (outside of amount for storage and bonds).
-    // pub fn get_available_amount(&self) -> U128 {
-    //     U128(env::account_balance() - self.get_locked_storage_amount().0 - self.locked_amount)
-    // }
-
-    /// Get the number of proposals, also happens to be the ID of the latest proposal
-    pub fn get_last_proposal_id(&self) -> u64 {
-        self.last_proposal_id
-    }
-
-    /// Get proposals in paginated view.
-    pub fn get_proposals(&self, from_index: u64, limit: u64) -> Vec<PayoutOutput<Proposal>> {
-        (from_index..min(self.last_proposal_id, from_index + limit))
-            .filter_map(|id| {
-                self.proposals
-                    .get(&id)
-                    .map(|p| PayoutOutput { id, payout: p })
-            })
-            .collect()
-    }
-
-    /// Get specific proposal.
-    pub fn get_proposal(&self, id: u64) -> PayoutOutput<Proposal> {
-        let proposal = self.proposals.get(&id).expect("ERR_NO_PROPOSAL");
-        PayoutOutput {
-            id,
-            payout: proposal,
+        pub fn get_miscellaneous(&self, start_index:u64, limit:u64) -> Vec<PayoutOutput<Miscellaneous>>{
+            if self.policy.is_council_member(&env::signer_account_id()){
+            (start_index..min(self.last_miscellaneous_id, start_index+limit)).filter_map(|id|{
+                self.miscellaneous.get(&id).map(|m| PayoutOutput{id, payout: m})
+            }).collect()
+        } 
+        // check
+        else{
+            (start_index..min(self.last_miscellaneous_id, start_index+limit)).filter_map(|id|{
+                self.miscellaneous.get(&id).map(|m| PayoutOutput{id, payout: m})
+            }).collect()
         }
     }
 
-    /// Get specific bounty
-    pub fn get_bounty(&self, id: u64) -> PayoutOutput<Bounty> {
-        let bounty = self.bounties.get(&id).expect("ERR_NO_BOUNTY");
-        PayoutOutput { id, payout: bounty }
+    pub fn get_proposal(&self, id: u64) -> PayoutOutput<Proposal>{
+        let proposal = self.proposals.get(&id).expect("ERR_NO_PROPOSAL");
+        let signer = env::signer_account_id();
+        if self.policy.is_council_member(&signer)|| signer == proposal.proposer{
+        PayoutOutput {
+            id,
+            payout: proposal,
+            }
+        } // need check
+        else{
+            PayoutOutput{
+                id,
+                payout: proposal,
+            }
+        }
     }
 
-    /// Get the number of bounties, also happens to be the ID of the latest bounty
-    pub fn get_last_bounty_id(&self) -> u64 {
-        self.last_bounty_id
+    pub fn get_bounty(&self, id: u64) -> PayoutOutput<Bounty>{
+        let bounty = self.bounties.get(&id).expect("NO_BOUNTY_FOUND");
+        let signer = env::signer_account_id();
+        if self.policy.is_council_member(&signer)|| signer == bounty.proposer{
+        PayoutOutput {
+            id,
+            payout: bounty,
+            }
+        } // need check
+        else{
+            PayoutOutput{
+                id,
+                payout : bounty,
+            }
+        }
     }
 
-    /// Get bounties in paginated view.
-    pub fn get_bounties(&self, from_index: u64, limit: u64) -> Vec<PayoutOutput<Bounty>> {
-        (from_index..std::cmp::min(from_index + limit, self.last_bounty_id))
-            .filter_map(|id| {
-                self.bounties
-                    .get(&id)
-                    .map(|p| PayoutOutput { id, payout: p })
-            })
-            .collect()
+    pub fn get_miscellaneous_by_id(&self, id: u64) -> PayoutOutput<Miscellaneous>{
+        let miscellaneous = self.miscellaneous.get(&id).expect("NO_MISC_PAYOUT_FOUND");
+        let signer = env::signer_account_id();
+        if self.policy.is_council_member(&env::signer_account_id()) || signer == miscellaneous.proposer{
+        PayoutOutput {
+            id,
+            payout: miscellaneous,
+            }
+        } // need check
+        else{
+            PayoutOutput {
+                id,
+                payout: miscellaneous,
+                }
+        }
     }
+
 }
+
+
+
+
+
+
+
+
+// paginated view
+// if env signer is council: then they can have paginated view of payouts
+// if env signer is not council: then they will have only payouts they have added
+
+// get diff payout by id
+// if env signer is council: can view it if it exists
+// if env signer is campus ambassador: can view only if it is added by him. 
