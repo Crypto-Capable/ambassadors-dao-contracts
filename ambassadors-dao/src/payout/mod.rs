@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::near_bindgen;
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::AccountId;
+use near_sdk::{env, near_bindgen};
 
 pub use bounty::{Bounty, BountyPayout};
 pub use miscellaneous::{Miscellaneous, MiscellaneousPayout};
@@ -94,4 +94,37 @@ pub struct Payout<T> {
 // TODO: implementation of adding proposals, acting on proposals, and executing proposals
 
 #[near_bindgen]
-impl Contract {}
+impl Contract {
+    #[private]
+    pub fn internal_act_payout<T>(
+        &self,
+        payout: &mut Payout<T>,
+        action: types::Action,
+        note: Option<String>,
+    ) {
+        let signer = env::signer_account_id();
+        // check if the user is authorized to take the action
+        match action {
+            types::Action::RemovePayout => {
+                if signer != payout.proposer {
+                    panic!("{}", error::ErrNotPermitted);
+                }
+                payout.status = PayoutStatus::Removed(note);
+            }
+            types::Action::VoteReject => {
+                if !self.policy.is_council_member(&signer) {
+                    panic!("{}", error::ErrNotPermitted);
+                }
+                payout.votes.insert(signer, vote::Vote::from(action));
+                payout.votes_count.reject_count += 1;
+            }
+            types::Action::VoteApprove => {
+                if !self.policy.is_council_member(&signer) {
+                    panic!("{}", error::ErrNotPermitted);
+                }
+                payout.votes.insert(signer, vote::Vote::from(action));
+                payout.votes_count.approve_count += 1;
+            }
+        };
+    }
+}

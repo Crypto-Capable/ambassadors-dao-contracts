@@ -177,6 +177,12 @@ near view $SPUTNIK_ID get_policy
 
 ## Details
 
+### Registration
+
+Use nearamp sdk for signing up with a funded wallet with a balance of 0.1 Near. For succesfull registration, the user will be asked for a referral ID that belongs to either a registered ambassador or a council member.
+
+Whenever the DAO is created, each of the council members will be assigned a referral ID which can be used for registrations of initial ambassadors. Upon the use of a referral ID, the related account holder will receive a transfer of Near tokens worth USD 5.
+
 ### Roles and Permissions
 
 There are two roles in this DAO, the council and the ambassadors. There are some actions that can only be done by the council such as Voting on different Payouts. For implementation of these permissions, we have a method on the `Policy.council` field called `is_council_member` that says if an AccountId belongs to the council.

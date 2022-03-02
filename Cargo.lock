@@ -58,6 +58,7 @@ dependencies = [
  "near-contract-standards",
  "near-sdk",
  "near-sdk-sim",
+ "rand 0.8.5",
  "serde_with",
 ]
 

@@ -57,32 +57,9 @@ impl Contract {
         let mut proposal = match self.proposals.get(&id) {
             Some(p) => p,
             None => {
-                panic!("ERR_PROPOSAL_NOT_FOUND");
+                panic!("{}", error::ErrProposalNotFound);
             }
         };
-        let signer = env::signer_account_id();
-        // check if the user is authorized to take the action
-        match action {
-            types::Action::RemovePayout => {
-                if signer != proposal.proposer {
-                    panic!("ERR_NOT_PERMITTED");
-                }
-                proposal.status = PayoutStatus::Removed(note);
-            }
-            types::Action::VoteReject => {
-                if !self.policy.is_council_member(&signer) {
-                    panic!("ERR_NOT_PERMITTED");
-                }
-                proposal.votes.insert(signer, vote::Vote::from(action));
-                proposal.votes_count.reject_count += 1;
-            }
-            types::Action::VoteApprove => {
-                if !self.policy.is_council_member(&signer) {
-                    panic!("ERR_NOT_PERMITTED");
-                }
-                proposal.votes.insert(signer, vote::Vote::from(action));
-                proposal.votes_count.approve_count += 1;
-            }
-        }
+        self.internal_act_payout(&mut proposal, action, note);
     }
 }
