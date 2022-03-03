@@ -8,7 +8,10 @@ use rand::distributions::{Alphanumeric, DistString};
 // use std::sync::{Arc, Mutex};
 // use std::thread;
 
-use payout::{BountyPayout, MiscellaneousPayout, Payout, ProposalPayout};
+use payout::{
+    BountyPayout, MiscellaneousPayout, Payout, PayoutInput, ProposalPayout, Referral,
+    ReferralPayout,
+};
 use policy::Policy;
 use types::Config;
 
@@ -44,6 +47,10 @@ pub struct Contract {
     miscellaneous: LookupMap<u64, MiscellaneousPayout>,
     /// the id of the last proposal
     last_miscellaneous_id: u64,
+    /// referral payouts
+    referrals: LookupMap<u64, ReferralPayout>,
+    /// the id of the last referral
+    last_referral_id: u64,
     /// store the referral ids as a map of <referral-id, account-id>
     referral_ids: LookupMap<String, AccountId>,
     // store the current USD conversion rate, conversion_rate == 1 Near token
@@ -81,6 +88,8 @@ impl Contract {
             last_bounty_id: 0,
             miscellaneous: LookupMap::<u64, MiscellaneousPayout>::new(b"m".to_vec()),
             last_miscellaneous_id: 0,
+            referrals: LookupMap::<u64, ReferralPayout>::new(b"r".to_vec()),
+            last_referral_id: 0,
             referral_ids: {
                 let map = LookupMap::new(b"t".to_vec());
                 map.extend(
@@ -106,12 +115,21 @@ impl Contract {
     pub fn register_ambassador(&mut self, token: Option<String>) -> String {
         // create a referral token for the new ambassador
         let ref_token = Self::internal_generate_referral_id();
-        self.referral_ids
-            .insert(&ref_token, &env::signer_account_id());
+        let signer = env::signer_account_id();
+        self.referral_ids.insert(&ref_token, &signer);
 
         // check if there was a referral token used by the new ambassador
         if let Some(token) = token {
             if let Some(id) = self.referral_ids.get(&token) {
+                // add payout record
+                self.add_payout_referral(PayoutInput::<Referral> {
+                    description: "Registration referral payout, pre-approved by DAO".to_string(),
+                    information: Referral::AmbassadorRegistration {
+                        referrer_id: signer,
+                        referred_id: id,
+                    },
+                });
+                // transfer the referral reward
                 Promise::new(id).transfer(amounts::CARegisterReferralAmount);
             }
         }

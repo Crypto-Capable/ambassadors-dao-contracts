@@ -8,12 +8,14 @@ use near_sdk::{env, near_bindgen};
 pub use bounty::{Bounty, BountyPayout};
 pub use miscellaneous::{Miscellaneous, MiscellaneousPayout};
 pub use proposal::{Proposal, ProposalPayout};
+pub use referrals::{Referral, ReferralPayout};
 
 use crate::*;
 
 mod bounty;
 mod miscellaneous;
 mod proposal;
+mod referrals;
 
 /// The URL to any resource on the internet
 pub type ResourceLink = String;
