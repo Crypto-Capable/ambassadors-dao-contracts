@@ -66,12 +66,12 @@ impl Contract {
         // check if proposal with id exists
         let mut proposal = match self.proposals.get(&id) {
             Some(p) => p,
-            None => panic!("{}", error::ErrProposalNotFound),
+            None => panic!("{}", error::ERR_PROPOSAL_NOT_FOUND),
         };
         // if proposal is not under consideration, it is final
         match proposal.status {
             PayoutStatus::UnderConsideration => {}
-            _ => panic!("{}: {}", error::ErrNotPermitted, "payout finalized"),
+            _ => panic!("{}: {}", error::ERR_NOT_PERMITTED, "payout finalized"),
         }
         self.internal_act_payout(&mut proposal, action, note);
         // check if payout state is approved

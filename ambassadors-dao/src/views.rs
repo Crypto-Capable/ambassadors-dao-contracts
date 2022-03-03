@@ -16,7 +16,7 @@ use crate::*;
 /// This is format of output via JSON for the payout.
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
-pub struct PayoutOutput<T> {
+pub struct PayoutOutput<T: Serialize> {
     /// Id of the payout.
     pub id: u64,
     #[serde(flatten)]
@@ -53,7 +53,10 @@ impl Contract {
 
     /// Get specific proposal.
     pub fn get_proposal(&self, id: u64) -> PayoutOutput<Proposal> {
-        let proposal = self.proposals.get(&id).expect(error::ErrProposalNotFound);
+        let proposal = self
+            .proposals
+            .get(&id)
+            .expect(error::ERR_PROPOSAL_NOT_FOUND);
         let signer = env::signer_account_id();
         if self.policy.is_council_member(&signer) || signer == proposal.proposer {
             PayoutOutput {
@@ -61,7 +64,7 @@ impl Contract {
                 payout: proposal,
             }
         } else {
-            panic!("{}", error::ErrProposalNotFound);
+            panic!("{}", error::ERR_PROPOSAL_NOT_FOUND);
         }
     }
 
@@ -83,12 +86,12 @@ impl Contract {
 
     /// Get specific bounty
     pub fn get_bounty(&self, id: u64) -> PayoutOutput<Bounty> {
-        let bounty = self.bounties.get(&id).expect(error::ErrBountyNotFound);
+        let bounty = self.bounties.get(&id).expect(error::ERR_BOUNTY_NOT_FOUND);
         let signer = env::signer_account_id();
         if self.policy.is_council_member(&signer) || signer == bounty.proposer {
             PayoutOutput { id, payout: bounty }
         } else {
-            panic!("{}", error::ErrProposalNotFound);
+            panic!("{}", error::ERR_PROPOSAL_NOT_FOUND);
         }
     }
 
@@ -113,12 +116,12 @@ impl Contract {
         let misc = self
             .miscellaneous
             .get(&id)
-            .expect(error::ErrMiscellaneousNotFound);
+            .expect(error::ERR_MISCELLANEOUS_NOT_FOUND);
         let signer = env::signer_account_id();
         if self.policy.is_council_member(&signer) || signer == misc.proposer {
             PayoutOutput { id, payout: misc }
         } else {
-            panic!("{}", error::ErrProposalNotFound);
+            panic!("{}", error::ERR_PROPOSAL_NOT_FOUND);
         }
     }
 
@@ -144,7 +147,10 @@ impl Contract {
 
     /// Get specific bounty
     pub fn get_referral(&self, id: u64) -> PayoutOutput<Referral> {
-        let referral = self.referrals.get(&id).expect(error::ErrReferralNotFound);
+        let referral = self
+            .referrals
+            .get(&id)
+            .expect(error::ERR_REFERRAL_NOT_FOUND);
         let signer = env::signer_account_id();
         if self.policy.is_council_member(&signer) || signer == referral.proposer {
             PayoutOutput {
@@ -152,7 +158,7 @@ impl Contract {
                 payout: referral,
             }
         } else {
-            panic!("{}", error::ErrProposalNotFound);
+            panic!("{}", error::ERR_PROPOSAL_NOT_FOUND);
         }
     }
 

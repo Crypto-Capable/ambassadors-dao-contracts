@@ -15,6 +15,8 @@ pub enum Referral {
         /// the account ID (person) to which the token belongs
         referred_id: AccountId,
     },
+    Recruitment,
+    NearCertifiedDeveloper,
 }
 
 impl From<PayoutInput<Referral>> for Payout<Referral> {

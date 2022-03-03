@@ -70,17 +70,17 @@ pub struct CreateContractParams {
 impl Contract {
     #[init]
     pub fn new(params: CreateContractParams) -> Self {
-        if params.council.len() == 0 {
+        if params.council.is_empty() {
             panic!("ERR_COUNCIL_EMPTY");
         }
-        if params.name.len() == 0 {
+        if params.name.is_empty() {
             panic!("ERR_INVALID_NAME");
         }
-        if params.purpose.len() == 0 {
+        if params.purpose.is_empty() {
             panic!("ERR_PURPOSE_EMPTY");
         }
         Self {
-            policy: Policy::from(params.council),
+            policy: Policy::from(params.council.clone()),
             config: Config::new(params.name, params.purpose),
             proposals: LookupMap::<u64, ProposalPayout>::new(b"p".to_vec()),
             last_proposal_id: 0,
@@ -91,7 +91,7 @@ impl Contract {
             referrals: LookupMap::<u64, ReferralPayout>::new(b"r".to_vec()),
             last_referral_id: 0,
             referral_ids: {
-                let map = LookupMap::new(b"t".to_vec());
+                let mut map = LookupMap::new(b"t".to_vec());
                 map.extend(
                     params
                         .council
@@ -126,11 +126,11 @@ impl Contract {
                     description: "Registration referral payout, pre-approved by DAO".to_string(),
                     information: Referral::AmbassadorRegistration {
                         referrer_id: signer,
-                        referred_id: id,
+                        referred_id: id.clone(),
                     },
                 });
                 // transfer the referral reward
-                Promise::new(id).transfer(amounts::CARegisterReferralAmount);
+                Promise::new(id).transfer(amounts::CA_REGISTER_REFERRAL_AMOUNT);
             }
         }
 

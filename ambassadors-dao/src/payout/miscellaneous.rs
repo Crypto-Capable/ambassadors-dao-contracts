@@ -58,7 +58,7 @@ impl Contract {
         let mut misc = match self.miscellaneous.get(&id) {
             Some(m) => m,
             None => {
-                panic!("{}", error::ErrMiscellaneousNotFound);
+                panic!("{}", error::ERR_MISCELLANEOUS_NOT_FOUND);
             }
         };
         self.internal_act_payout(&mut misc, action, note);
@@ -67,7 +67,7 @@ impl Contract {
                 Miscellaneous::ContentCreationBounty {
                     expected_amount, ..
                 } => expected_amount,
-                Miscellaneous::CampusAmbassadorBonus { .. } => amounts::CABonusAmount,
+                Miscellaneous::CampusAmbassadorBonus { .. } => amounts::CA_BONUS_AMOUNT,
                 Miscellaneous::CampusSigningMOU => 0,
             };
             Promise::new(misc.proposer).transfer(tokens);
