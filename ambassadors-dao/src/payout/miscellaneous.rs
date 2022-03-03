@@ -1,3 +1,4 @@
+use near_sdk::Balance;
 use near_sdk::{env, near_bindgen};
 
 use super::*;
@@ -8,9 +9,15 @@ pub type MiscellaneousPayout = Payout<Miscellaneous>;
 #[cfg_attr(not(target_arch = "wasm32"), derive(Clone, Debug))]
 #[serde(crate = "near_sdk::serde")]
 pub enum Miscellaneous {
-    ContentCreationBounty { links_to_content: Vec<ResourceLink> },
+    ContentCreationBounty {
+        links_to_content: Vec<ResourceLink>,
+        expected_amount: Balance,
+        note: String,
+    },
     CampusSigningMOU,
-    CampusAmbassadorBonus { links_to_content: Vec<ResourceLink> },
+    CampusAmbassadorBonus {
+        links_to_payouts: Vec<ResourceLink>,
+    },
 }
 
 impl From<PayoutInput<Miscellaneous>> for Payout<Miscellaneous> {
@@ -48,13 +55,22 @@ impl Contract {
         action: types::Action,
         note: Option<String>,
     ) {
-        let mut miscellaneous = match self.miscellaneous.get(&id) {
+        let mut misc = match self.miscellaneous.get(&id) {
             Some(m) => m,
             None => {
                 panic!("{}", error::ErrMiscellaneousNotFound);
             }
         };
-        self.internal_act_payout(&mut miscellaneous, action, note);
-        // TODO: payout amounts not very clear
+        self.internal_act_payout(&mut misc, action, note);
+        if misc.status == PayoutStatus::Approved {
+            let tokens = match misc.info {
+                Miscellaneous::ContentCreationBounty {
+                    expected_amount, ..
+                } => expected_amount,
+                Miscellaneous::CampusAmbassadorBonus { .. } => amounts::CABonusAmount,
+                Miscellaneous::CampusSigningMOU => 0,
+            };
+            Promise::new(misc.proposer).transfer(tokens);
+        }
     }
 }
