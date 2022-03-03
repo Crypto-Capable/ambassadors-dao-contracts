@@ -82,8 +82,25 @@ impl Contract {
         // check if payout state is approved
         if bounty.status == PayoutStatus::Approved {
             let tokens = match bounty.info {
-                Bounty::HackathonCompletion { .. } => amounts::HackathonCompletionAmount,
-                Bounty::MemeContestCompletion { .. } => amounts::MemeContestCompletionAmount,
+                Bounty::HackathonCompletion { winners_info, .. } => {
+                    // send the respective winners tokens
+                    Promise::new(winners_info[0].account_id)
+                        .transfer(amounts::HackathonFirstPlaceAmount);
+                    Promise::new(winners_info[1].account_id)
+                        .transfer(amounts::HackathonSecondPlaceAmount);
+                    Promise::new(winners_info[2].account_id)
+                        .transfer(amounts::HackathonThirdPlaceAmount);
+                    amounts::HackathonCompletionAmount
+                }
+                Bounty::MemeContestCompletion { winners_info, .. } => {
+                    Promise::new(winners_info[0].account_id)
+                        .transfer(amounts::MemeContestFirstPlaceAmount);
+                    Promise::new(winners_info[1].account_id)
+                        .transfer(amounts::MemeContestFirstPlaceAmount);
+                    Promise::new(winners_info[2].account_id)
+                        .transfer(amounts::MemeContestFirstPlaceAmount);
+                    amounts::MemeContestCompletionAmount
+                }
                 Bounty::Webinar { .. } => amounts::WebinarCompletionAmount,
                 Bounty::ContentCoordniation { .. } => amounts::ContentCoordinationAmount,
             };
