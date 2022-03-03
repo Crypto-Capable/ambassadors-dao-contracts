@@ -23,9 +23,9 @@ pub type ResourceLink = String;
 #[cfg_attr(not(target_arch = "wasm32"), derive(Clone, Debug))]
 #[serde(crate = "near_sdk::serde")]
 pub struct SubmissionInfo {
-    name: String,
-    account_id: AccountId,
-    submission_link: ResourceLink,
+    pub name: String,
+    pub account_id: AccountId,
+    pub submission_link: ResourceLink,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
