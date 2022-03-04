@@ -30,23 +30,23 @@ impl FactoryManager {
             // Load input into register 0.
             sys::input(0);
             // Compute sha256 hash of register 0 and store in register 1.
-            sys::sha256(u64::MAX as _, 0 as _, 1);
+            sys::sha256(u64::MAX, 0, 1);
             // Check if such blob is already stored.
             assert_eq!(
-                sys::storage_has_key(u64::MAX as _, 1 as _),
+                sys::storage_has_key(u64::MAX as _, 1),
                 0,
                 "ERR_ALREADY_EXISTS"
             );
             // Store key-value pair. The key is represented by register 1 and the value by register 0.
-            sys::storage_write(u64::MAX as _, 1 as _, u64::MAX as _, 0 as _, 2);
+            sys::storage_write(u64::MAX, 1, u64::MAX, 0, 2);
             // Load register 1 into blob_hash.
             let blob_hash = [0u8; 32];
-            sys::read_register(1, blob_hash.as_ptr() as _);
+            sys::read_register(1, blob_hash.as_ptr() as u64);
             // Return from function value of register 1.
             let blob_hash_str = serde_json::to_string(&Base58CryptoHash::from(blob_hash))
                 .unwrap()
                 .into_bytes();
-            sys::value_return(blob_hash_str.len() as _, blob_hash_str.as_ptr() as _);
+            sys::value_return(blob_hash_str.len() as u64, blob_hash_str.as_ptr() as u64);
         }
     }
 
@@ -63,9 +63,9 @@ impl FactoryManager {
             // Check that such contract exists.
             assert!(env::storage_has_key(&code_hash), "Contract doesn't exist");
             // Load the hash from storage.
-            sys::storage_read(code_hash.len() as _, code_hash.as_ptr() as _, 0);
+            sys::storage_read(code_hash.len() as u64, code_hash.as_ptr() as u64, 0);
             // Return as value.
-            sys::value_return(u64::MAX as _, 0 as _);
+            sys::value_return(u64::MAX, 0);
         }
     }
 
@@ -83,18 +83,18 @@ impl FactoryManager {
             // Check that such contract exists.
             assert!(env::storage_has_key(&code_hash), "Contract doesn't exist");
             // Load the hash from storage.
-            sys::storage_read(code_hash.len() as _, code_hash.as_ptr() as _, 0);
+            sys::storage_read(code_hash.len() as u64, code_hash.as_ptr() as u64, 0);
             // Create a promise toward given account.
             let promise_id =
-                sys::promise_batch_create(account_id.len() as _, account_id.as_ptr() as _);
+                sys::promise_batch_create(account_id.len() as u64, account_id.as_ptr() as u64);
             // Call `update` method, which should also handle migrations.
             sys::promise_batch_action_function_call(
                 promise_id,
-                method_name.len() as _,
-                method_name.as_ptr() as _,
-                u64::MAX as _,
+                method_name.len() as u64,
+                method_name.as_ptr() as u64,
+                u64::MAX,
                 0,
-                &NO_DEPOSIT as *const u128 as _,
+                &NO_DEPOSIT as *const u128 as u64,
                 (env::prepaid_gas() - env::used_gas() - GAS_UPDATE_LEFTOVER).0,
             );
             sys::promise_return(promise_id);
@@ -118,41 +118,41 @@ impl FactoryManager {
         unsafe {
             // Check that such contract exists.
             assert_eq!(
-                sys::storage_has_key(code_hash.len() as _, code_hash.as_ptr() as _),
+                sys::storage_has_key(code_hash.len() as u64, code_hash.as_ptr() as u64),
                 1,
                 "Contract doesn't exist"
             );
             // Load input (wasm code) into register 0.
-            sys::storage_read(code_hash.len() as _, code_hash.as_ptr() as _, 0);
+            sys::storage_read(code_hash.len() as u64, code_hash.as_ptr() as u64, 0);
             // schedule a Promise tx to account_id
             let promise_id =
-                sys::promise_batch_create(account_id.len() as _, account_id.as_ptr() as _);
+                sys::promise_batch_create(account_id.len() as u64, account_id.as_ptr() as u64);
             // create account first.
             sys::promise_batch_action_create_account(promise_id);
             // transfer attached deposit.
-            sys::promise_batch_action_transfer(promise_id, &attached_deposit as *const u128 as _);
+            sys::promise_batch_action_transfer(promise_id, &attached_deposit as *const u128 as u64);
             // deploy contract (code is taken from register 0).
-            sys::promise_batch_action_deploy_contract(promise_id, u64::MAX as _, 0);
+            sys::promise_batch_action_deploy_contract(promise_id, u64::MAX, 0);
             // call `new` with given arguments.
             sys::promise_batch_action_function_call(
                 promise_id,
-                new_method.len() as _,
-                new_method.as_ptr() as _,
-                args.len() as _,
-                args.as_ptr() as _,
-                &NO_DEPOSIT as *const u128 as _,
+                new_method.len() as u64,
+                new_method.as_ptr() as u64,
+                args.len() as u64,
+                args.as_ptr() as u64,
+                &NO_DEPOSIT as *const u128 as u64,
                 CREATE_CALL_GAS.0,
             );
             // attach callback to the factory.
             let _ = sys::promise_then(
                 promise_id,
-                factory_account_id.len() as _,
-                factory_account_id.as_ptr() as _,
-                callback_method.len() as _,
-                callback_method.as_ptr() as _,
-                callback_args.len() as _,
-                callback_args.as_ptr() as _,
-                &NO_DEPOSIT as *const u128 as _,
+                factory_account_id.len() as u64,
+                factory_account_id.as_ptr() as u64,
+                callback_method.len() as u64,
+                callback_method.as_ptr() as u64,
+                callback_args.len() as u64,
+                callback_args.as_ptr() as u64,
+                &NO_DEPOSIT as *const u128 as u64,
                 ON_CREATE_CALL_GAS.0,
             );
             sys::promise_return(promise_id);

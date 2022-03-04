@@ -40,6 +40,12 @@ impl Policy {
     }
 }
 
+impl Default for Policy {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl From<Vec<AccountId>> for Policy {
     fn from(input: Vec<AccountId>) -> Self {
         let mut set = HashSet::with_capacity(input.len());

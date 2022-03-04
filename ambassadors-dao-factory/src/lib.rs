@@ -170,7 +170,7 @@ impl AmbassadorsDAOFactory {
         AccountId::new_unchecked(
             String::from_utf8(
                 env::storage_read(FACTORY_OWNER_KEY)
-                    .unwrap_or(env::current_account_id().as_bytes().to_vec()),
+                    .unwrap_or_else(|| env::current_account_id().as_bytes().to_vec()),
             )
             .expect("INTERNAL_FAIL"),
         )
@@ -212,22 +212,22 @@ impl AmbassadorsDAOFactory {
         );
 
         let storage_metadata = env::storage_read(CODE_METADATA_KEY);
-        if storage_metadata.is_none() {
-            let mut storage_metadata: UnorderedMap<Base58CryptoHash, DaoContractMetadata> =
-                UnorderedMap::new(b"m".to_vec());
-            storage_metadata.insert(&code_hash, &metadata);
-            let serialized_metadata =
-                BorshSerialize::try_to_vec(&storage_metadata).expect("INTERNAL_FAIL");
-            env::storage_write(CODE_METADATA_KEY, &serialized_metadata);
-        } else {
-            let storage_metadata = storage_metadata.expect("INTERNAL_FAIL");
+
+        if let Some(storage_metadata) = storage_metadata {
             let mut deserialized_metadata: UnorderedMap<Base58CryptoHash, DaoContractMetadata> =
                 BorshDeserialize::try_from_slice(&storage_metadata).expect("INTERNAL_FAIL");
             deserialized_metadata.insert(&code_hash, &metadata);
             let serialized_metadata =
                 BorshSerialize::try_to_vec(&deserialized_metadata).expect("INTERNAL_FAIL");
             env::storage_write(CODE_METADATA_KEY, &serialized_metadata);
-        }
+        } else {
+            let mut storage_metadata: UnorderedMap<Base58CryptoHash, DaoContractMetadata> =
+                UnorderedMap::new(b"m".to_vec());
+            storage_metadata.insert(&code_hash, &metadata);
+            let serialized_metadata =
+                BorshSerialize::try_to_vec(&storage_metadata).expect("INTERNAL_FAIL");
+            env::storage_write(CODE_METADATA_KEY, &serialized_metadata);
+        };
 
         if set_default {
             env::storage_write(DEFAULT_CODE_HASH_KEY, &hash);
@@ -251,7 +251,7 @@ impl AmbassadorsDAOFactory {
         let storage_metadata = env::storage_read(CODE_METADATA_KEY).expect("INTERNAL_FAIL");
         let deserialized_metadata: UnorderedMap<Base58CryptoHash, DaoContractMetadata> =
             BorshDeserialize::try_from_slice(&storage_metadata).expect("INTERNAL_FAIL");
-        return deserialized_metadata.to_vec();
+        deserialized_metadata.to_vec()
     }
 
     /// Check if the actor is the owner
@@ -266,7 +266,7 @@ impl AmbassadorsDAOFactory {
 
 pub fn slice_to_hash(hash: &[u8]) -> Base58CryptoHash {
     let mut result: CryptoHash = [0; 32];
-    result.copy_from_slice(&hash);
+    result.copy_from_slice(hash);
     Base58CryptoHash::from(result)
 }
 

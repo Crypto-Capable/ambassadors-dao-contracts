@@ -72,6 +72,12 @@ impl VotesCount {
     }
 }
 
+impl Default for VotesCount {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// A Payout is a type of payout. Depeding on the type of the Payout
 /// a set of information is required.
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
