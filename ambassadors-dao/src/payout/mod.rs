@@ -40,13 +40,6 @@ pub enum PayoutStatus {
 }
 
 /// A generic input structure for payouts
-///
-/// Let's say you want to add a proposal payout
-/// ```rust
-/// pub fn add_proposal(&mut self, proposal: PayoutInput<ProposalKind>) {
-///     // do something here
-/// }
-/// ```
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Clone, Debug))]
 #[serde(crate = "near_sdk::serde")]
