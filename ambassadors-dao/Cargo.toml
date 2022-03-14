@@ -12,6 +12,7 @@ near-sdk = {version = "4.0.0-pre.4", features = ["unstable"]}
 near-contract-standards = "4.0.0-pre.4"
 hex = "0.4.2"
 rand = "0.8.5"
+getrandom = { version = "0.2.4", features = ["js"] }
 
 [dependencies.serde_with]
 version = "1.4.0"

@@ -14,12 +14,15 @@ use payout::{
 };
 use policy::Policy;
 use types::Config;
+use upgrade::internal_set_factory_info;
+use upgrade::FactoryInfo;
 
 mod amounts;
 mod error;
 mod payout;
 mod policy;
 mod types;
+mod upgrade;
 mod vote;
 
 pub mod views;
@@ -79,7 +82,7 @@ impl Contract {
         if params.purpose.is_empty() {
             panic!("ERR_PURPOSE_EMPTY");
         }
-        Self {
+        let contract = Self {
             policy: Policy::from(params.council.clone()),
             config: Config::new(params.name, params.purpose),
             proposals: LookupMap::<u64, ProposalPayout>::new(b"p".to_vec()),
@@ -101,7 +104,12 @@ impl Contract {
                 map
             },
             // conversion_rate: val,
-        }
+        };
+        internal_set_factory_info(&FactoryInfo {
+            factory_id: env::predecessor_account_id(),
+            auto_update: true,
+        });
+        contract
     }
 
     /// Generate a 16 characters long referral ID.
