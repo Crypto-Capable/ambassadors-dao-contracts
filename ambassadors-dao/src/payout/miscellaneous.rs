@@ -61,7 +61,13 @@ impl Contract {
                 panic!("{}", error::ERR_MISCELLANEOUS_NOT_FOUND);
             }
         };
-        self.internal_act_payout(&mut misc, action, note);
+        internal_act_payout(
+            self.policy.is_council_member(&env::signer_account_id()),
+            self.policy.get_council_size() as u64,
+            &mut misc,
+            action,
+            note,
+        );
         if misc.status == PayoutStatus::Approved {
             let tokens = match misc.info {
                 Miscellaneous::ContentCreationBounty {

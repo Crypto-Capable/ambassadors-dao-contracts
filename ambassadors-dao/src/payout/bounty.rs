@@ -78,7 +78,13 @@ impl Contract {
                 panic!("{}", error::ERR_BOUNTY_NOT_FOUND);
             }
         };
-        self.internal_act_payout(&mut bounty, action, note);
+        internal_act_payout(
+            self.policy.is_council_member(&env::signer_account_id()),
+            self.policy.get_council_size() as u64,
+            &mut bounty,
+            action,
+            note,
+        );
         // check if payout state is approved
         if bounty.status == PayoutStatus::Approved {
             let tokens = match bounty.info {

@@ -90,95 +90,89 @@ pub struct Payout<T: Serialize> {
     pub votes_count: VotesCount,
 }
 
-// TODO: referral payouts
-// TODO: implementation of adding proposals, acting on proposals, and executing proposals
+pub(crate) fn internal_act_payout<T: Serialize>(
+    is_council_member: bool,
+    council_size: u64,
+    payout: &mut Payout<T>,
+    action: types::Action,
+    note: Option<String>,
+) {
+    let signer = env::signer_account_id();
 
-#[near_bindgen]
-impl Contract {
-    /// Acts on the payout according to the action passed.
-    /// Also changes the status of the payout if deemed so.
-    #[private]
-    pub fn internal_act_payout<T: Serialize>(
-        &self,
-        payout: &mut Payout<T>,
-        action: types::Action,
-        note: Option<String>,
-    ) {
-        let signer = env::signer_account_id();
+    match action {
+        types::Action::RemovePayout => {
+            // only the proposer can remove the payout
+            if signer != payout.proposer {
+                panic!("{}", error::ERR_NOT_PERMITTED);
+            }
+            // payout can only be removed if it is currently under consideration
+            match payout.status {
+                PayoutStatus::UnderConsideration => {
+                    payout.status = PayoutStatus::Removed(note);
+                }
+                _ => {
+                    panic!(
+                        "{}: {}",
+                        error::ERR_NOT_PERMITTED,
+                        "payout not under consideration"
+                    );
+                }
+            };
+        }
+        types::Action::VoteReject => {
+            // check if the user is authorized to take the action
+            if !is_council_member {
+                panic!("{}", error::ERR_NOT_PERMITTED);
+            }
+            // if the signer has already voted
+            if payout.votes.contains_key(&signer) {
+                panic!("{}: {}", error::ERR_NOT_PERMITTED, "already voted");
+            }
+            // one may think we need to check if the count is consistent with
+            // the number of council members, but just checking if the signer
+            // council member has voted or not rules out the said issue
+            payout.votes.insert(signer, vote::Vote::from(action));
+            payout.votes_count.reject_count += 1;
+            // update payout status if needed
+            internal_update_payout_status(council_size, payout);
+        }
+        types::Action::VoteApprove => {
+            // check if the user is authorized to take the action
+            if !is_council_member {
+                panic!("{}", error::ERR_NOT_PERMITTED);
+            }
+            // if the signer has already voted
+            if payout.votes.contains_key(&signer) {
+                panic!("{}: {}", error::ERR_NOT_PERMITTED, "already voted");
+            }
+            // one may think we need to check if the count is consistent with
+            // the number of council members, but just checking if the signer
+            // council member has voted or not rules out the said issue
+            payout.votes.insert(signer, vote::Vote::from(action));
+            payout.votes_count.approve_count += 1;
+            // update payout status if needed
+            internal_update_payout_status(council_size, payout);
+        }
+    };
+}
 
-        match action {
-            types::Action::RemovePayout => {
-                // only the proposer can remove the payout
-                if signer != payout.proposer {
-                    panic!("{}", error::ERR_NOT_PERMITTED);
-                }
-                // payout can only be removed if it is currently under consideration
-                match payout.status {
-                    PayoutStatus::UnderConsideration => {
-                        payout.status = PayoutStatus::Removed(note);
-                    }
-                    _ => {
-                        panic!(
-                            "{}: {}",
-                            error::ERR_NOT_PERMITTED,
-                            "payout not under consideration"
-                        );
-                    }
-                };
-            }
-            types::Action::VoteReject => {
-                // check if the user is authorized to take the action
-                if !self.policy.is_council_member(&signer) {
-                    panic!("{}", error::ERR_NOT_PERMITTED);
-                }
-                // if the signer has already voted
-                if payout.votes.contains_key(&signer) {
-                    panic!("{}: {}", error::ERR_NOT_PERMITTED, "already voted");
-                }
-                // one may think we need to check if the count is consistent with
-                // the number of council members, but just checking if the signer
-                // council member has voted or not rules out the said issue
-                payout.votes.insert(signer, vote::Vote::from(action));
-                payout.votes_count.reject_count += 1;
-                // update payout status if needed
-                self.internal_update_payout_status(payout);
-            }
-            types::Action::VoteApprove => {
-                // check if the user is authorized to take the action
-                if !self.policy.is_council_member(&signer) {
-                    panic!("{}", error::ERR_NOT_PERMITTED);
-                }
-                // if the signer has already voted
-                if payout.votes.contains_key(&signer) {
-                    panic!("{}: {}", error::ERR_NOT_PERMITTED, "already voted");
-                }
-                // one may think we need to check if the count is consistent with
-                // the number of council members, but just checking if the signer
-                // council member has voted or not rules out the said issue
-                payout.votes.insert(signer, vote::Vote::from(action));
-                payout.votes_count.approve_count += 1;
-                // update payout status if needed
-                self.internal_update_payout_status(payout);
-            }
-        };
-    }
+/// check the votes on a payout and update the status if needed
+pub(crate) fn internal_update_payout_status<T: Serialize>(
+    council_size: u64,
+    payout: &mut Payout<T>,
+) {
+    let approve_count = payout.votes_count.approve_count;
+    let reject_count = payout.votes_count.reject_count;
+    let sum = approve_count + reject_count;
 
-    /// check the votes on a payout and update the status if needed
-    #[private]
-    pub fn internal_update_payout_status<T: Serialize>(&self, payout: &mut Payout<T>) {
-        let approve_count = payout.votes_count.approve_count;
-        let reject_count = payout.votes_count.reject_count;
-        let sum = approve_count + reject_count;
-
-        // let's check if all council members have voted
-        if sum == self.policy.get_council_size() as u64 {
-            // if approve_count / sum >= 1/2     (i.e. at least half votes are approve)
-            // therefore, 2 * approve_count >= sum
-            if 2 * approve_count >= sum {
-                payout.status = PayoutStatus::Approved;
-            } else {
-                payout.status = PayoutStatus::Rejected;
-            }
+    // let's check if all council members have voted
+    if sum == council_size {
+        // if approve_count / sum >= 1/2     (i.e. at least half votes are approve)
+        // therefore, 2 * approve_count >= sum
+        if 2 * approve_count >= sum {
+            payout.status = PayoutStatus::Approved;
+        } else {
+            payout.status = PayoutStatus::Rejected;
         }
     }
 }

@@ -73,7 +73,13 @@ impl Contract {
             PayoutStatus::UnderConsideration => {}
             _ => panic!("{}: {}", error::ERR_NOT_PERMITTED, "payout finalized"),
         }
-        self.internal_act_payout(&mut proposal, action, note);
+        internal_act_payout(
+            self.policy.is_council_member(&env::signer_account_id()),
+            self.policy.get_council_size() as u64,
+            &mut proposal,
+            action,
+            note,
+        );
         // check if payout state is approved
         if proposal.status == PayoutStatus::Approved {
             let tokens = match proposal.info {
