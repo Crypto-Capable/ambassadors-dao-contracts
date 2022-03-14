@@ -51,6 +51,10 @@ impl Contract {
         U128(locked_storage_amount)
     }
 
+    pub fn is_council_member(&self, member_id: AccountId) -> bool {
+        self.policy.is_council_member(&member_id)
+    }
+
     /// Get specific proposal.
     pub fn get_proposal(&self, id: u64) -> PayoutOutput<Proposal> {
         let proposal = self
