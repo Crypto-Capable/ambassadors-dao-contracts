@@ -4,7 +4,8 @@ use near_sdk::collections::LookupMap;
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{env, near_bindgen};
 use near_sdk::{AccountId, PanicOnDefault, Promise};
-use rand::distributions::{Alphanumeric, DistString};
+use ran::*;
+
 // use std::sync::{Arc, Mutex};
 // use std::thread;
 
@@ -35,56 +36,47 @@ pub mod views;
 #[derive(BorshSerialize, BorshDeserialize, PanicOnDefault)]
 pub struct Contract {
     /// defines the policy of the contract
-    policy: Policy,
+    pub policy: Policy,
     /// the configuration of the contract
-    config: Config,
+    pub config: Config,
     /// proposal payouts
-    proposals: LookupMap<u64, ProposalPayout>,
+    pub proposals: LookupMap<u64, ProposalPayout>,
     /// the id of the last proposal
-    last_proposal_id: u64,
+    pub last_proposal_id: u64,
     /// proposal payouts
-    bounties: LookupMap<u64, BountyPayout>,
+    pub bounties: LookupMap<u64, BountyPayout>,
     /// the id of the last proposal
-    last_bounty_id: u64,
+    pub last_bounty_id: u64,
     /// proposal payouts
-    miscellaneous: LookupMap<u64, MiscellaneousPayout>,
+    pub miscellaneous: LookupMap<u64, MiscellaneousPayout>,
     /// the id of the last proposal
-    last_miscellaneous_id: u64,
+    pub last_miscellaneous_id: u64,
     /// referral payouts
-    referrals: LookupMap<u64, ReferralPayout>,
+    pub referrals: LookupMap<u64, ReferralPayout>,
     /// the id of the last referral
-    last_referral_id: u64,
+    pub last_referral_id: u64,
     /// store the referral ids as a map of <referral-id, account-id>
-    referral_ids: LookupMap<String, AccountId>,
+    pub referral_ids: LookupMap<String, AccountId>,
     // store the current USD conversion rate, conversion_rate == 1 Near token
-    // conversion_rate: Option<f32>,
-}
-
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
-#[cfg_attr(not(target_arch = "wasm32"), derive(Clone, Debug))]
-#[serde(crate = "near_sdk::serde")]
-pub struct CreateContractParams {
-    council: Vec<AccountId>,
-    name: String,
-    purpose: String,
+    // pub conversion_rate: Option<f32>,
 }
 
 #[near_bindgen]
 impl Contract {
     #[init]
-    pub fn new(params: CreateContractParams) -> Self {
-        if params.council.is_empty() {
-            panic!("ERR_COUNCIL_EMPTY");
-        }
-        if params.name.is_empty() {
+    pub fn new(name: String, purpose: String, council: Vec<AccountId>) -> Self {
+        if name.is_empty() {
             panic!("ERR_INVALID_NAME");
         }
-        if params.purpose.is_empty() {
+        if purpose.is_empty() {
             panic!("ERR_PURPOSE_EMPTY");
         }
+        if council.is_empty() {
+            panic!("ERR_COUNCIL_EMPTY");
+        }
         let contract = Self {
-            policy: Policy::from(params.council.clone()),
-            config: Config::new(params.name, params.purpose),
+            policy: Policy::from(council.clone()),
+            config: Config::new(name, purpose),
             proposals: LookupMap::<u64, ProposalPayout>::new(b"p".to_vec()),
             last_proposal_id: 0,
             bounties: LookupMap::<u64, BountyPayout>::new(b"b".to_vec()),
@@ -96,8 +88,7 @@ impl Contract {
             referral_ids: {
                 let mut map = LookupMap::new(b"t".to_vec());
                 map.extend(
-                    params
-                        .council
+                    council
                         .iter()
                         .map(|id| (Self::internal_generate_referral_id(), id.clone())),
                 );
@@ -112,14 +103,8 @@ impl Contract {
         contract
     }
 
-    /// Generate a 16 characters long referral ID.
-    /// It contains [a-zA-Z0-9] mcharacters
-    #[private]
-    pub fn internal_generate_referral_id() -> String {
-        Alphanumeric.sample_string(&mut rand::thread_rng(), 16)
-    }
-
     /// Perform required actions when an ambassador registers
+    /// Requires the sender to send a 16 characters long alphanumeric referral token
     pub fn register_ambassador(&mut self, token: Option<String>) -> String {
         // create a referral token for the new ambassador
         let ref_token = Self::internal_generate_referral_id();
@@ -143,6 +128,35 @@ impl Contract {
         }
 
         ref_token
+    }
+}
+
+impl Contract {
+    /// Generate a 16 characters long referral ID.
+    /// It contains [a-zA-Z0-9] mcharacters
+    pub fn internal_generate_referral_id() -> String {
+        set_seeds(env::block_timestamp());
+        let mut id_vec = vec![0; 24];
+        let ru8 = Rnum::newu8();
+        for i in 0..24 {
+            id_vec[i] = match ru8.rannum_in(0., 9.) {
+                Rnum::U8(v) => {
+                    if v > 4 {
+                        match ru8.rannum_in(97., 122.) {
+                            Rnum::U8(n) => n,
+                            _ => panic!("ERR_GENERATING_RANDOM_NUMBER"),
+                        }
+                    } else {
+                        match ru8.rannum_in(65., 90.) {
+                            Rnum::U8(n) => n,
+                            _ => panic!("ERR_GENERATING_RANDOM_NUMBER"),
+                        }
+                    }
+                }
+                _ => panic!("ERR_GENERATING_RANDOM_NUMBER"),
+            };
+        }
+        String::from_utf8(id_vec).unwrap()
     }
 }
 

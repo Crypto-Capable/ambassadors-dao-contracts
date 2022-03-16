@@ -61,10 +61,10 @@ cd sputnik-dao-contract/sputnikdao-factory2 && ./build.sh
 export CONTRACT_ID=YOUR_ACCOUNT.testnet
 ```
 
-- Deploy factory contract by running the following command from your current directory _(`sputnik-dao-contract/sputnikdao-factory2`)_:
+- Deploy factory contract by running the following command from your current directory _(`ambassadors-dao-factory/`)_:
 
 ```bash
-near deploy $CONTRACT_ID --wasmFile=res/sputnikdao_factory2.wasm --accountId $CONTRACT_ID
+near deploy $CONTRACT_ID --wasmFile=res/ambassadors_dao_factory.wasm --accountId $CONTRACT_ID
 ```
 
 </p>
@@ -88,13 +88,13 @@ near call $CONTRACT_ID new --accountId $CONTRACT_ID --gas 100000000000000
 - Define the council of your DAO:
 
 ```bash
-export COUNCIL='["council-member.testnet", "YOUR_ACCOUNT.testnet"]'
+export COUNCIL='["siddharthborderwala.testnet"]'
 ```
 
 - Configure the name, purpose, and initial council members of the DAO and convert the arguments in base64:
 
 ```bash
-export ARGS=`echo '{"config": {"name": "genesis", "purpose": "Genesis DAO", "metadata":""}, "policy": '$COUNCIL'}' | base64`
+export ARGS=`echo '{"name": "genesis", "purpose": "Genesis DAO", "council": '$COUNCIL'}' | base64`
 ```
 
 - Create the new DAO!:
@@ -106,11 +106,7 @@ near call $CONTRACT_ID create "{\"name\": \"genesis\", \"args\": \"$ARGS\"}" --a
 **Example Response:**
 
 ```bash
-Scheduling a call: sputnik-v2.testnet.create({"name": "genesis", "args": "eyJjb25maWciOiB7Im5hbWUiOiAiZ2VuZXNpcyIsICJwdXJwb3NlIjogIkdlbmVzaXMgREFPIiwgIm1ldGFkYXRhIjoiIn0sICJwb2xpY3kiOiBbImNvdW5jaWwtbWVtYmVyLnRlc3RuZXQiLCAiWU9VUl9BQ0NPVU5ULnRlc3RuZXQiXX0K"}) with attached 5 NEAR
-Transaction Id 5beqy8ZMkzpzw7bTLPMv6qswukqqowfzYXZnMAitRVS7
-To see the transaction in the transaction explorer, please open this url in your browser
-https://explorer.testnet.near.org/transactions/5beqy8ZMkzpzw7bTLPMv6qswukqqowfzYXZnMAitRVS7
-true
+
 ```
 
 **Note:** If you see `false` at the bottom (after the transaction link) something went wrong. Check your arguments passed and target contracts and re-deploy.

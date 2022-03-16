@@ -52,8 +52,8 @@ pub struct PayoutInput<T: Serialize> {
 #[cfg_attr(not(target_arch = "wasm32"), derive(Clone, Debug))]
 #[serde(crate = "near_sdk::serde")]
 pub struct VotesCount {
-    approve_count: u64,
-    reject_count: u64,
+    pub approve_count: u64,
+    pub reject_count: u64,
 }
 
 impl VotesCount {

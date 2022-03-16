@@ -39,8 +39,8 @@ pub struct DaoContractMetadata {
 #[near_bindgen]
 #[derive(BorshSerialize, BorshDeserialize, PanicOnDefault)]
 pub struct AmbassadorsDAOFactory {
-    factory_manager: FactoryManager,
-    daos: UnorderedSet<AccountId>,
+    pub factory_manager: FactoryManager,
+    pub daos: UnorderedSet<AccountId>,
 }
 
 #[near_bindgen]
@@ -77,6 +77,12 @@ impl AmbassadorsDAOFactory {
     pub fn set_owner(&self, owner_id: AccountId) {
         self.assert_owner();
         env::storage_write(FACTORY_OWNER_KEY, owner_id.as_bytes());
+    }
+
+    /// Restore the default smart contract code
+    pub fn restore_initial_contract_code(&self) {
+        self.assert_owner();
+        self.internal_store_initial_contract();
     }
 
     /// Set the hash for the default contract code
