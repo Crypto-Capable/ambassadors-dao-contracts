@@ -45,7 +45,7 @@ git clone https://github.com/Crypto-Capable/ambassadors-dao-contracts
 <p>
 
 ```bash
-cd sputnik-dao-contract/sputnikdao-factory2 && ./build.sh
+cd ambassadors-dao-contracts/ambassadors-dao-factory && sh ./build.sh
 ```
 
 </p>
@@ -94,13 +94,13 @@ export COUNCIL='["siddharthborderwala.testnet"]'
 - Configure the name, purpose, and initial council members of the DAO and convert the arguments in base64:
 
 ```bash
-export ARGS=`echo '{"name": "genesis", "purpose": "Genesis DAO", "council": '$COUNCIL'}' | base64`
+export ARGS=`echo '{"name": "ca", "purpose": "Crypto Capabale Campus Ambassadors DAO", "council": '$COUNCIL'}' | base64`
 ```
 
 - Create the new DAO!:
 
 ```bash
-near call $CONTRACT_ID create "{\"name\": \"genesis\", \"args\": \"$ARGS\"}" --accountId $CONTRACT_ID --amount 10 --gas 150000000000000
+near call $CONTRACT_ID create "{\"name\": \"ca\", \"args\": \"$ARGS\"}" --accountId $CONTRACT_ID --amount 10 --gas 150000000000000
 ```
 
 **Example Response:**
