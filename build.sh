@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-cargo +stable build --target wasm32-unknown-unknown --release
+RUSTFLAGS='-C link-arg=-s' cargo +stable build --target wasm32-unknown-unknown --release
 
 RELEASEDIR="target/wasm32-unknown-unknown/release"
 
