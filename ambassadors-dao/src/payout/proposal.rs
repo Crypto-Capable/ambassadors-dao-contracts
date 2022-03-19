@@ -1,7 +1,7 @@
-use near_sdk::Balance;
 use near_sdk::{env, near_bindgen};
 
 use super::*;
+use crate::amounts::Amount;
 
 pub type ProposalPayout = Payout<Proposal>;
 
@@ -13,7 +13,7 @@ pub enum Proposal {
         /// number of expected registrations in the hackathon
         expected_registrations: u64,
         /// estimated budget required for the hackathon in near tokens
-        estimated_budget: Balance,
+        estimated_budget: Amount,
         /// s3 link to a PDF with details of the proposal
         supporting_document: ResourceLink,
     },
@@ -21,13 +21,13 @@ pub enum Proposal {
         /// number of expected registrations in the meme contest
         expected_registrations: u64,
         /// estimated budget required for the meme contest in near tokens
-        estimated_budget: Balance,
+        estimated_budget: Amount,
         /// s3 link to a PDF with details of the proposal
         supporting_document: ResourceLink,
     },
     Open {
         /// estimated budget required for the proposal in near tokens
-        estimated_budget: Balance,
+        estimated_budget: Amount,
         /// s3 link to a PDF with details of the proposal
         supporting_document: ResourceLink,
     },
@@ -50,14 +50,14 @@ impl From<PayoutInput<Proposal>> for Payout<Proposal> {
 #[near_bindgen]
 impl Contract {
     /// create a proposal payout
-    pub fn add_payout_proposal(&mut self, proposal: PayoutInput<Proposal>) -> u64 {
+    pub fn add_payout_proposal(&mut self, payout: PayoutInput<Proposal>) -> u64 {
         // validate input, seems like there is nothing to do here
 
         // anyone can create this, no permission checks needed
 
         // add the proposal to Contract.proposals
         let new_id = self.last_proposal_id + 1;
-        self.proposals.insert(&new_id, &Payout::from(proposal));
+        self.proposals.insert(&new_id, &Payout::from(payout));
         self.last_proposal_id = new_id;
         new_id
     }
@@ -93,7 +93,7 @@ impl Contract {
                     estimated_budget, ..
                 } => estimated_budget,
             };
-            Promise::new(proposal.proposer).transfer(tokens);
+            Promise::new(proposal.proposer).transfer(tokens.into());
         }
     }
 }

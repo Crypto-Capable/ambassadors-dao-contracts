@@ -47,14 +47,14 @@ impl From<PayoutInput<Referral>> for Payout<Referral> {
 #[near_bindgen]
 impl Contract {
     #[private]
-    pub fn add_payout_referral(&mut self, referral: PayoutInput<Referral>) -> u64 {
+    pub fn add_payout_referral(&mut self, payout: PayoutInput<Referral>) -> u64 {
         // validate input, seems like there is nothing to do here
 
         // anyone can create this, no permission checks needed
 
         // add the referral to Contract.referrals
         let new_id = self.last_referral_id + 1;
-        self.referrals.insert(&new_id, &Payout::from(referral));
+        self.referrals.insert(&new_id, &Payout::from(payout));
         self.last_referral_id = new_id;
         new_id
     }

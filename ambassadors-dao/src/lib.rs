@@ -74,8 +74,21 @@ impl Contract {
         if council.is_empty() {
             panic!("ERR_COUNCIL_EMPTY");
         }
+        // generate the referral tokens for the council
+        let council_info = council
+            .iter()
+            .map(|id| (id.clone(), Self::internal_generate_referral_id()))
+            .collect::<Vec<_>>();
+        // create the referral lookup map
+        let mut ref_map = LookupMap::new(b"t".to_vec());
+        ref_map.extend(
+            council_info
+                .iter()
+                .map(|(id, token)| (token.clone(), id.clone())),
+        );
+        // instantiate the contract itself
         let contract = Self {
-            policy: Policy::from(council.clone()),
+            policy: Policy::from(council_info),
             config: Config::new(name, purpose),
             proposals: LookupMap::<u64, ProposalPayout>::new(b"p".to_vec()),
             last_proposal_id: 0,
@@ -85,15 +98,7 @@ impl Contract {
             last_miscellaneous_id: 0,
             referrals: LookupMap::<u64, ReferralPayout>::new(b"r".to_vec()),
             last_referral_id: 0,
-            referral_ids: {
-                let mut map = LookupMap::new(b"t".to_vec());
-                map.extend(
-                    council
-                        .iter()
-                        .map(|id| (Self::internal_generate_referral_id(), id.clone())),
-                );
-                map
-            },
+            referral_ids: ref_map,
             // conversion_rate: val,
         };
         internal_set_factory_info(&FactoryInfo {
@@ -104,11 +109,20 @@ impl Contract {
     }
 
     /// Perform required actions when an ambassador registers
-    /// Requires the sender to send a 16 characters long alphanumeric referral token
-    pub fn register_ambassador(&mut self, token: Option<String>) -> String {
+    /// Requires the sender to send a 24 characters long alphanumeric referral token
+    pub fn register_ambassador(&mut self, token: Option<String>) -> Option<String> {
+        let signer = env::signer_account_id();
+        // if ambassador already exists
+        if self.policy.is_registered_ambassador(&signer) {
+            return None;
+        }
         // create a referral token for the new ambassador
         let ref_token = Self::internal_generate_referral_id();
-        let signer = env::signer_account_id();
+        // insert it in the policy
+        self.policy
+            .ambassadors
+            .insert(signer.clone(), ref_token.clone());
+        // insert the ref token in the referral ids hashmap
         self.referral_ids.insert(&ref_token, &signer);
 
         // check if there was a referral token used by the new ambassador
@@ -123,11 +137,11 @@ impl Contract {
                     },
                 });
                 // transfer the referral reward
-                Promise::new(id).transfer(amounts::CA_REGISTER_REFERRAL_AMOUNT);
+                Promise::new(id).transfer(amounts::CA_REGISTER_REFERRAL_AMOUNT.into());
             }
         }
 
-        ref_token
+        Some(ref_token)
     }
 }
 

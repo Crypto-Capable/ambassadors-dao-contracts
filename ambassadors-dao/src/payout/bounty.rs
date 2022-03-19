@@ -59,14 +59,14 @@ impl From<PayoutInput<Bounty>> for Payout<Bounty> {
 #[near_bindgen]
 impl Contract {
     /// create a bounty payout
-    pub fn add_payout_bounty(&mut self, bounty: PayoutInput<Bounty>) -> u64 {
+    pub fn add_payout_bounty(&mut self, payout: PayoutInput<Bounty>) -> u64 {
         // validate input, seems like there is nothing to do here
 
         // anyone can create this, no permission checks needed
 
         // add the bounty to Contract.bountys
         let new_id = self.last_bounty_id + 1;
-        self.bounties.insert(&new_id, &Payout::from(bounty));
+        self.bounties.insert(&new_id, &Payout::from(payout));
         self.last_bounty_id = new_id;
         new_id
     }
@@ -91,26 +91,26 @@ impl Contract {
                 Bounty::HackathonCompletion { winners_info, .. } => {
                     // send the respective winners tokens
                     Promise::new(winners_info[0].account_id.clone())
-                        .transfer(amounts::HACKATHON_FIRST_PLACE_AMOUNT);
+                        .transfer(amounts::HACKATHON_FIRST_PLACE_AMOUNT.into());
                     Promise::new(winners_info[1].account_id.clone())
-                        .transfer(amounts::HACKATHON_SECOND_PLACE_AMOUNT);
+                        .transfer(amounts::HACKATHON_SECOND_PLACE_AMOUNT.into());
                     Promise::new(winners_info[2].account_id.clone())
-                        .transfer(amounts::HACKATHON_THIRD_PLACE_AMOUNT);
+                        .transfer(amounts::HACKATHON_THIRD_PLACE_AMOUNT.into());
                     amounts::HACKATHON_COMPLETION_AMOUNT
                 }
                 Bounty::MemeContestCompletion { winners_info, .. } => {
                     Promise::new(winners_info[0].account_id.clone())
-                        .transfer(amounts::MEME_CONTEST_FIRST_PLACE_AMOUNT);
+                        .transfer(amounts::MEME_CONTEST_FIRST_PLACE_AMOUNT.into());
                     Promise::new(winners_info[1].account_id.clone())
-                        .transfer(amounts::MEME_CONTEST_SECOND_PLACE_AMOUNT);
+                        .transfer(amounts::MEME_CONTEST_SECOND_PLACE_AMOUNT.into());
                     Promise::new(winners_info[2].account_id.clone())
-                        .transfer(amounts::MEME_CONTEST_THIRD_PLACE_AMOUNT);
+                        .transfer(amounts::MEME_CONTEST_THIRD_PLACE_AMOUNT.into());
                     amounts::MEME_CONTEST_COMPLETION_AMOUNT
                 }
                 Bounty::Webinar { .. } => amounts::WEBINAR_COMPLETION_AMOUNT,
                 Bounty::ContentCoordniation { .. } => amounts::CONTENT_COORDINATION_AMOUNT,
             };
-            Promise::new(bounty.proposer).transfer(tokens);
+            Promise::new(bounty.proposer).transfer(tokens.into());
         }
     }
 }

@@ -1,12 +1,11 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::Balance;
 
 // 1 yN to prevent access key fraud.
 // pub const ONE_YOCTO_NEAR: Balance = 1;
 
 /// 1 N
-pub const ONE_NEAR: Balance = 1_000_000_000_000_000_000_000_000;
+pub const ONE_NEAR: u128 = 1_000_000_000_000_000_000_000_000;
 
 // Gas for single ft_transfer call.
 // pub const GAS_FOR_FT_TRANSFER: Gas = Gas(10_000_000_000_000);

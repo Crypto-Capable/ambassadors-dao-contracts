@@ -1,4 +1,5 @@
 use std::cmp::min;
+use std::collections::HashMap;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::env;
@@ -9,6 +10,7 @@ use near_sdk::CryptoHash;
 use payout::{Bounty, Miscellaneous, Proposal};
 
 use crate::*;
+use upgrade::internal_get_factory_info;
 
 /// TODO: Get payout input fields, for that create a derive proc_macro
 /// and put it on each of the enums and required structs
@@ -51,8 +53,30 @@ impl Contract {
         U128(locked_storage_amount)
     }
 
+    /// Returns if the member_id is a council member
     pub fn is_council_member(&self, member_id: AccountId) -> bool {
         self.policy.is_council_member(&member_id)
+    }
+
+    /// Returns the referral token of the signer
+    pub fn get_my_referral_token(&self) -> String {
+        self.policy
+            .ambassadors
+            .get(&env::signer_account_id())
+            .expect("KEY_NOT_FOUND")
+            .into()
+    }
+
+    /// Returns the referral token of the council members
+    pub fn get_council_referral_tokens(&self) -> HashMap<AccountId, String> {
+        let signer = env::signer_account_id();
+        if self.policy.council.contains_key(&signer)
+            || internal_get_factory_info().factory_id == signer
+        {
+            self.policy.council.clone()
+        } else {
+            panic!("{}", error::ERR_NOT_PERMITTED)
+        }
     }
 
     /// Get specific proposal.

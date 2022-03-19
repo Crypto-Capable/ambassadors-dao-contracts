@@ -1,7 +1,7 @@
-use near_sdk::Balance;
 use near_sdk::{env, near_bindgen};
 
 use super::*;
+use crate::amounts::Amount;
 
 pub type MiscellaneousPayout = Payout<Miscellaneous>;
 
@@ -11,7 +11,7 @@ pub type MiscellaneousPayout = Payout<Miscellaneous>;
 pub enum Miscellaneous {
     ContentCreationBounty {
         links_to_content: Vec<ResourceLink>,
-        expected_amount: Balance,
+        expected_amount: Amount,
         note: String,
     },
     CampusSigningMOU,
@@ -36,15 +36,14 @@ impl From<PayoutInput<Miscellaneous>> for Payout<Miscellaneous> {
 #[near_bindgen]
 impl Contract {
     /// create a miscellaneous payout
-    pub fn add_payout_miscellaneous(&mut self, miscellaneous: PayoutInput<Miscellaneous>) -> u64 {
+    pub fn add_payout_miscellaneous(&mut self, payout: PayoutInput<Miscellaneous>) -> u64 {
         // validate input, seems like there is nothing to do here
 
         // anyone can create this, no permission checks needed
 
         // add the miscellaneous to Contract.miscellaneous
         let new_id = self.last_miscellaneous_id + 1;
-        self.miscellaneous
-            .insert(&new_id, &Payout::from(miscellaneous));
+        self.miscellaneous.insert(&new_id, &Payout::from(payout));
         self.last_miscellaneous_id = new_id;
         new_id
     }
@@ -74,9 +73,9 @@ impl Contract {
                     expected_amount, ..
                 } => expected_amount,
                 Miscellaneous::CampusAmbassadorBonus { .. } => amounts::CA_BONUS_AMOUNT,
-                Miscellaneous::CampusSigningMOU => 0,
+                Miscellaneous::CampusSigningMOU => Amount(0),
             };
-            Promise::new(misc.proposer).transfer(tokens);
+            Promise::new(misc.proposer).transfer(tokens.into());
         }
     }
 }
