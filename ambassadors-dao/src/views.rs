@@ -54,8 +54,14 @@ impl Contract {
     }
 
     /// Returns if the member_id is a council member
-    pub fn is_council_member(&self, member_id: AccountId) -> bool {
-        self.policy.is_council_member(&member_id)
+    pub fn is_council_member(&self) -> bool {
+        self.policy.is_council_member(&env::signer_account_id())
+    }
+
+    /// Returns the referral token of the signer
+    pub fn is_registered_ambassador(&self) -> bool {
+        self.policy
+            .is_registered_ambassador(&env::signer_account_id())
     }
 
     /// Returns the referral token of the signer

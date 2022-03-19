@@ -1,7 +1,7 @@
+use crate::types::ONE_NEAR;
 use near_sdk::{env, near_bindgen};
 
 use super::*;
-use crate::amounts::Amount;
 
 pub type MiscellaneousPayout = Payout<Miscellaneous>;
 
@@ -11,7 +11,7 @@ pub type MiscellaneousPayout = Payout<Miscellaneous>;
 pub enum Miscellaneous {
     ContentCreationBounty {
         links_to_content: Vec<ResourceLink>,
-        expected_amount: Amount,
+        expected_amount: u64,
         note: String,
     },
     CampusSigningMOU,
@@ -68,14 +68,19 @@ impl Contract {
             note,
         );
         if misc.status == PayoutStatus::Approved {
-            let tokens = match misc.info {
+            match misc.info {
                 Miscellaneous::ContentCreationBounty {
                     expected_amount, ..
-                } => expected_amount,
-                Miscellaneous::CampusAmbassadorBonus { .. } => amounts::CA_BONUS_AMOUNT,
-                Miscellaneous::CampusSigningMOU => Amount(0),
+                } => {
+                    // here expected amount is in near
+                    Promise::new(misc.proposer).transfer((expected_amount as u128) * ONE_NEAR);
+                }
+                Miscellaneous::CampusAmbassadorBonus { .. } => {
+                    // here the constant is in yoctonear
+                    Promise::new(misc.proposer).transfer(amounts::CA_BONUS_AMOUNT);
+                }
+                Miscellaneous::CampusSigningMOU => {}
             };
-            Promise::new(misc.proposer).transfer(tokens.into());
         }
     }
 }

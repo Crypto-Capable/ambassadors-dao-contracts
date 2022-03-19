@@ -87,30 +87,31 @@ impl Contract {
         );
         // check if payout state is approved
         if bounty.status == PayoutStatus::Approved {
+            // send the respective winners tokens
+            // here tokens is in yoctonear
             let tokens = match bounty.info {
                 Bounty::HackathonCompletion { winners_info, .. } => {
-                    // send the respective winners tokens
                     Promise::new(winners_info[0].account_id.clone())
-                        .transfer(amounts::HACKATHON_FIRST_PLACE_AMOUNT.into());
+                        .transfer(amounts::HACKATHON_FIRST_PLACE_AMOUNT);
                     Promise::new(winners_info[1].account_id.clone())
-                        .transfer(amounts::HACKATHON_SECOND_PLACE_AMOUNT.into());
+                        .transfer(amounts::HACKATHON_SECOND_PLACE_AMOUNT);
                     Promise::new(winners_info[2].account_id.clone())
-                        .transfer(amounts::HACKATHON_THIRD_PLACE_AMOUNT.into());
+                        .transfer(amounts::HACKATHON_THIRD_PLACE_AMOUNT);
                     amounts::HACKATHON_COMPLETION_AMOUNT
                 }
                 Bounty::MemeContestCompletion { winners_info, .. } => {
                     Promise::new(winners_info[0].account_id.clone())
-                        .transfer(amounts::MEME_CONTEST_FIRST_PLACE_AMOUNT.into());
+                        .transfer(amounts::MEME_CONTEST_FIRST_PLACE_AMOUNT);
                     Promise::new(winners_info[1].account_id.clone())
-                        .transfer(amounts::MEME_CONTEST_SECOND_PLACE_AMOUNT.into());
+                        .transfer(amounts::MEME_CONTEST_SECOND_PLACE_AMOUNT);
                     Promise::new(winners_info[2].account_id.clone())
-                        .transfer(amounts::MEME_CONTEST_THIRD_PLACE_AMOUNT.into());
+                        .transfer(amounts::MEME_CONTEST_THIRD_PLACE_AMOUNT);
                     amounts::MEME_CONTEST_COMPLETION_AMOUNT
                 }
                 Bounty::Webinar { .. } => amounts::WEBINAR_COMPLETION_AMOUNT,
                 Bounty::ContentCoordniation { .. } => amounts::CONTENT_COORDINATION_AMOUNT,
             };
-            Promise::new(bounty.proposer).transfer(tokens.into());
+            Promise::new(bounty.proposer).transfer(tokens);
         }
     }
 }

@@ -1,7 +1,7 @@
+use crate::types::ONE_NEAR;
 use near_sdk::{env, near_bindgen};
 
 use super::*;
-use crate::amounts::Amount;
 
 pub type ProposalPayout = Payout<Proposal>;
 
@@ -13,7 +13,7 @@ pub enum Proposal {
         /// number of expected registrations in the hackathon
         expected_registrations: u64,
         /// estimated budget required for the hackathon in near tokens
-        estimated_budget: Amount,
+        estimated_budget: u64,
         /// s3 link to a PDF with details of the proposal
         supporting_document: ResourceLink,
     },
@@ -21,13 +21,13 @@ pub enum Proposal {
         /// number of expected registrations in the meme contest
         expected_registrations: u64,
         /// estimated budget required for the meme contest in near tokens
-        estimated_budget: Amount,
+        estimated_budget: u64,
         /// s3 link to a PDF with details of the proposal
         supporting_document: ResourceLink,
     },
     Open {
         /// estimated budget required for the proposal in near tokens
-        estimated_budget: Amount,
+        estimated_budget: u64,
         /// s3 link to a PDF with details of the proposal
         supporting_document: ResourceLink,
     },
@@ -82,6 +82,7 @@ impl Contract {
         );
         // check if payout state is approved
         if proposal.status == PayoutStatus::Approved {
+            // here tokens is in near value
             let tokens = match proposal.info {
                 Proposal::Hackathon {
                     estimated_budget, ..
@@ -93,7 +94,7 @@ impl Contract {
                     estimated_budget, ..
                 } => estimated_budget,
             };
-            Promise::new(proposal.proposer).transfer(tokens.into());
+            Promise::new(proposal.proposer).transfer((tokens as u128) * ONE_NEAR);
         }
     }
 }
