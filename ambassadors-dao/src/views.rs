@@ -53,19 +53,18 @@ impl Contract {
         U128(locked_storage_amount)
     }
 
-    /// Returns if the member_id is a council member
-    pub fn is_council_member(&self) -> bool {
-        self.policy.is_council_member(&env::signer_account_id())
+    /// Returns if the account_id is a council member
+    pub fn is_council_member(&self, account_id: AccountId) -> bool {
+        self.policy.is_council_member(&account_id)
     }
 
     /// Returns the referral token of the signer
-    pub fn is_registered_ambassador(&self) -> bool {
-        self.policy
-            .is_registered_ambassador(&env::signer_account_id())
+    pub fn is_registered_ambassador(&self, account_id: AccountId) -> bool {
+        self.policy.is_registered_ambassador(&account_id)
     }
 
     /// Returns the referral token of the signer
-    pub fn get_my_referral_token(&self) -> String {
+    pub fn get_referral_token(&self) -> String {
         self.policy
             .ambassadors
             .get(&env::signer_account_id())

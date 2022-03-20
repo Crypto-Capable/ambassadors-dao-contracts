@@ -110,11 +110,11 @@ impl Contract {
 
     /// Perform required actions when an ambassador registers
     /// Requires the sender to send a 24 characters long alphanumeric referral token
-    pub fn register_ambassador(&mut self, token: Option<String>) -> Option<String> {
+    pub fn register_ambassador(&mut self, token: Option<String>) -> bool {
         let signer = env::signer_account_id();
         // if ambassador already exists
         if self.policy.is_registered_ambassador(&signer) {
-            return None;
+            return false;
         }
         // create a referral token for the new ambassador
         let ref_token = Self::internal_generate_referral_id();
@@ -141,7 +141,7 @@ impl Contract {
             }
         }
 
-        Some(ref_token)
+        return true;
     }
 }
 
