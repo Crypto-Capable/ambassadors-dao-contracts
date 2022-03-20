@@ -1,8 +1,12 @@
+use crate::upgrade::internal_get_factory_info;
 use std::collections::HashMap;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
+// use near_sdk::near_bindgen;
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::AccountId;
+
+use crate::*;
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Debug, PartialEq))]
@@ -61,6 +65,57 @@ impl From<Vec<(AccountId, String)>> for Policy {
         Policy {
             council: council,
             ambassadors: HashMap::new(),
+        }
+    }
+}
+
+#[near_bindgen]
+impl Contract {
+    /// Returns the referral token of the council members
+    /// Can only be accessed by the factory or a council member
+    pub fn get_council_referral_tokens(&self) -> HashMap<AccountId, String> {
+        let signer = env::signer_account_id();
+        if self.policy.council.contains_key(&signer)
+            || internal_get_factory_info().factory_id == signer
+        {
+            self.policy.council.clone()
+        } else {
+            panic!("{}", error::ERR_NOT_PERMITTED)
+        }
+    }
+
+    /// Returns the referral token of the council members
+    /// Can only be accessed by council or factory
+    pub fn get_council_referral_token(&self, account_id: AccountId) -> String {
+        let signer = env::signer_account_id();
+        if self.policy.council.contains_key(&signer)
+            || internal_get_factory_info().factory_id == signer
+        {
+            self.policy
+                .council
+                .get(&account_id)
+                .expect(error::ERR_REFERRAL_TOKEN_NOT_FOUND)
+                .into()
+        } else {
+            panic!("{}", error::ERR_NOT_PERMITTED)
+        }
+    }
+
+    /// Returns the referral token of the account_id
+    /// Can only be accessed by council or factory or account owner
+    pub fn get_ambassador_referral_token(&self, account_id: AccountId) -> String {
+        let signer = env::signer_account_id();
+        if signer == account_id
+            || self.policy.is_council_member(&signer)
+            || signer == internal_get_factory_info().factory_id
+        {
+            self.policy
+                .ambassadors
+                .get(&account_id)
+                .expect(error::ERR_REFERRAL_TOKEN_NOT_FOUND)
+                .into()
+        } else {
+            panic!("{}", error::ERR_NOT_PERMITTED)
         }
     }
 }

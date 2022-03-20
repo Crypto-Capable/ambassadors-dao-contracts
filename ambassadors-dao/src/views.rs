@@ -1,5 +1,4 @@
 use std::cmp::min;
-use std::collections::HashMap;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::env;
@@ -10,7 +9,6 @@ use near_sdk::CryptoHash;
 use payout::{Bounty, Miscellaneous, Proposal};
 
 use crate::*;
-use upgrade::internal_get_factory_info;
 
 /// TODO: Get payout input fields, for that create a derive proc_macro
 /// and put it on each of the enums and required structs
@@ -63,41 +61,15 @@ impl Contract {
         self.policy.is_registered_ambassador(&account_id)
     }
 
-    /// Returns the referral token of the signer
-    pub fn get_referral_token(&self) -> String {
-        self.policy
-            .ambassadors
-            .get(&env::signer_account_id())
-            .expect("KEY_NOT_FOUND")
-            .into()
-    }
-
-    /// Returns the referral token of the council members
-    pub fn get_council_referral_tokens(&self) -> HashMap<AccountId, String> {
-        let signer = env::signer_account_id();
-        if self.policy.council.contains_key(&signer)
-            || internal_get_factory_info().factory_id == signer
-        {
-            self.policy.council.clone()
-        } else {
-            panic!("{}", error::ERR_NOT_PERMITTED)
-        }
-    }
-
     /// Get specific proposal.
     pub fn get_proposal(&self, id: u64) -> PayoutOutput<Proposal> {
         let proposal = self
             .proposals
             .get(&id)
             .expect(error::ERR_PROPOSAL_NOT_FOUND);
-        let signer = env::signer_account_id();
-        if self.policy.is_council_member(&signer) || signer == proposal.proposer {
-            PayoutOutput {
-                id,
-                payout: proposal,
-            }
-        } else {
-            panic!("{}", error::ERR_PROPOSAL_NOT_FOUND);
+        PayoutOutput {
+            id,
+            payout: proposal,
         }
     }
 
@@ -108,7 +80,7 @@ impl Contract {
 
     /// Get proposals in paginated view.
     pub fn get_all_proposals(&self, from_index: u64, limit: u64) -> Vec<PayoutOutput<Proposal>> {
-        (from_index..min(self.last_proposal_id, from_index + limit))
+        (from_index..=min(self.last_proposal_id, from_index + limit))
             .filter_map(|id| {
                 self.proposals
                     .get(&id)
@@ -120,12 +92,7 @@ impl Contract {
     /// Get specific bounty
     pub fn get_bounty(&self, id: u64) -> PayoutOutput<Bounty> {
         let bounty = self.bounties.get(&id).expect(error::ERR_BOUNTY_NOT_FOUND);
-        let signer = env::signer_account_id();
-        if self.policy.is_council_member(&signer) || signer == bounty.proposer {
-            PayoutOutput { id, payout: bounty }
-        } else {
-            panic!("{}", error::ERR_PROPOSAL_NOT_FOUND);
-        }
+        PayoutOutput { id, payout: bounty }
     }
 
     /// Get the number of bounties, also happens to be the ID of the latest bounty
@@ -135,7 +102,7 @@ impl Contract {
 
     /// Get bounties in paginated view.
     pub fn get_all_bounties(&self, from_index: u64, limit: u64) -> Vec<PayoutOutput<Bounty>> {
-        (from_index..std::cmp::min(from_index + limit, self.last_bounty_id))
+        (from_index..=std::cmp::min(from_index + limit, self.last_bounty_id))
             .filter_map(|id| {
                 self.bounties
                     .get(&id)
@@ -150,12 +117,7 @@ impl Contract {
             .miscellaneous
             .get(&id)
             .expect(error::ERR_MISCELLANEOUS_NOT_FOUND);
-        let signer = env::signer_account_id();
-        if self.policy.is_council_member(&signer) || signer == misc.proposer {
-            PayoutOutput { id, payout: misc }
-        } else {
-            panic!("{}", error::ERR_PROPOSAL_NOT_FOUND);
-        }
+        PayoutOutput { id, payout: misc }
     }
 
     /// Get the number of bounties, also happens to be the ID of the latest bounty
@@ -169,7 +131,7 @@ impl Contract {
         from_index: u64,
         limit: u64,
     ) -> Vec<PayoutOutput<Miscellaneous>> {
-        (from_index..std::cmp::min(from_index + limit, self.last_miscellaneous_id))
+        (from_index..=std::cmp::min(from_index + limit, self.last_miscellaneous_id))
             .filter_map(|id| {
                 self.miscellaneous
                     .get(&id)
@@ -184,14 +146,9 @@ impl Contract {
             .referrals
             .get(&id)
             .expect(error::ERR_REFERRAL_NOT_FOUND);
-        let signer = env::signer_account_id();
-        if self.policy.is_council_member(&signer) || signer == referral.proposer {
-            PayoutOutput {
-                id,
-                payout: referral,
-            }
-        } else {
-            panic!("{}", error::ERR_PROPOSAL_NOT_FOUND);
+        PayoutOutput {
+            id,
+            payout: referral,
         }
     }
 
@@ -202,7 +159,7 @@ impl Contract {
 
     /// Get referrals in paginated view.
     pub fn get_all_referrals(&self, from_index: u64, limit: u64) -> Vec<PayoutOutput<Referral>> {
-        (from_index..std::cmp::min(from_index + limit, self.last_referral_id))
+        (from_index..=std::cmp::min(from_index + limit, self.last_referral_id))
             .filter_map(|id| {
                 self.referrals
                     .get(&id)
