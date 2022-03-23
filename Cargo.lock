@@ -40,13 +40,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ambassadors-dao-factory"
-version = "0.1.0"
-dependencies = [
- "near-sdk",
-]
-
-[[package]]
 name = "arrayref"
 version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"

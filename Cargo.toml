@@ -1,6 +1,6 @@
 [workspace]
 # include a member for each contract
-members = ["ambassadors-dao", "ambassadors-dao-factory"]
+members = ["ambassadors-dao"]
 
 [profile.release]
 codegen-units = 1

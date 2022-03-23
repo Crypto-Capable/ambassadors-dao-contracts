@@ -30,7 +30,25 @@ Our smart contract has a function called `migrate`. When you need to upgrade the
 
 For rapid prototyping, you can follow [this](https://www.near-sdk.io/upgrading/prototyping), no migration is needed, and for production grade updates, you can follow [this](https://www.near-sdk.io/upgrading/production-basics).
 
+Now we have two options, either upload a blob into the contract storage and run the `upgrade_self` method on the smart contract or deploy the new contract with a custom init method.
+
+### Option 1
+
 When you need to deploy the upgraded contract and run the migration, use the following -
+
+```bash
+# store all the byte code into a variable
+NEW_VERSION_CODE='cat res/output.wasm'
+# 10 TGas
+GAS_100TGas="100000000000000"
+
+# make the function call on the contract, you will have to sign off the call
+near call $CONTRACT_NAME store_blob $(eval "$NEW_VERSION_CODE") --accountId $CONTRACT_NAME --gas $GAS_100TGas --amount 10
+# call a method named upgrade_self which will fetch the blob and run a migration
+near call $CONTRACT_NAME upgrade_self --accountId $CONTRACT_NAME
+```
+
+### Option 2
 
 ```bash
 near deploy \
@@ -39,5 +57,6 @@ near deploy \
   --initArgs "{}" \
   --accountId $CONTRACT_NAME
 ```
+In either case, for a production environment, it is immensly important to run migrations correctly.
 
 This should do the trick 💯
