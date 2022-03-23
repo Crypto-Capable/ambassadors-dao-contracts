@@ -1,8 +1,6 @@
-use crate::upgrade::internal_get_factory_info;
 use std::collections::HashMap;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-// use near_sdk::near_bindgen;
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::AccountId;
 
@@ -75,9 +73,7 @@ impl Contract {
     /// Can only be accessed by the factory or a council member
     pub fn get_council_referral_tokens(&self) -> HashMap<AccountId, String> {
         let signer = env::signer_account_id();
-        if self.policy.council.contains_key(&signer)
-            || internal_get_factory_info().factory_id == signer
-        {
+        if self.policy.council.contains_key(&signer) {
             self.policy.council.clone()
         } else {
             panic!("{}", error::ERR_NOT_PERMITTED)
@@ -88,9 +84,7 @@ impl Contract {
     /// Can only be accessed by council or factory
     pub fn get_council_referral_token(&self, account_id: AccountId) -> String {
         let signer = env::signer_account_id();
-        if self.policy.council.contains_key(&signer)
-            || internal_get_factory_info().factory_id == signer
-        {
+        if self.policy.council.contains_key(&signer) {
             self.policy
                 .council
                 .get(&account_id)
@@ -105,10 +99,7 @@ impl Contract {
     /// Can only be accessed by council or factory or account owner
     pub fn get_ambassador_referral_token(&self, account_id: AccountId) -> String {
         let signer = env::signer_account_id();
-        if signer == account_id
-            || self.policy.is_council_member(&signer)
-            || signer == internal_get_factory_info().factory_id
-        {
+        if signer == account_id || self.policy.is_council_member(&signer) {
             self.policy
                 .ambassadors
                 .get(&account_id)
