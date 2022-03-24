@@ -55,7 +55,7 @@ pub struct Contract {
     pub referral_ids: LookupMap<String, AccountId>,
     /// Large blob storage.
     pub blobs: LookupMap<CryptoHash, AccountId>,
-    // store the current USD conversion rate, conversion_rate == 1 Near token
+    // store the current USD conversion rate, conversion_rate is equal to the USD value of 1 Near token
     // pub conversion_rate: Option<f32>,
 }
 

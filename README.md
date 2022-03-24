@@ -39,83 +39,60 @@ git clone https://github.com/Crypto-Capable/ambassadors-dao-contracts
 
 </p>
 </details>
-<!-- TODO: edit points 3,4,5,6 and 7 -->
+
 <details>
-<summary>3. Build factory contract.</summary>
+<summary>3. Build contract.</summary>
 <p>
 
 ```bash
-cd ambassadors-dao-contracts/ambassadors-dao-factory && sh ./build.sh
+# go the the ambassadors-dao directory
+cd ambassadors-dao
+# build the contract, this will produce a WASM binary
+sh build.sh
 ```
 
 </p>
 </details>
 
 <details>
-<summary>4. Deploy factory.</summary>
-<p>
-
-- Create an env variable replacing `YOUR_ACCOUNT.testnet` with the name of the account you logged in with earlier:
-
-```bash
-export CONTRACT_ID=YOUR_ACCOUNT.testnet
-```
-
-- Deploy factory contract by running the following command from your current directory _(`ambassadors-dao-factory/`)_:
-
-```bash
-near deploy $CONTRACT_ID --wasmFile=res/ambassadors_dao_factory.wasm --accountId $CONTRACT_ID
-```
-
-</p>
-</details>
-
-<details>
-<summary>5. Initialize factory.</summary>
-<p>
-
-```bash
-near call $CONTRACT_ID new --accountId $CONTRACT_ID --gas 100000000000000
-```
-
-</p>
-</details>
-
-<details>
-<summary>6. Define the parameters of the new DAO, its council, and create it.</summary>
+<summary>4. Define the parameters of the new DAO, its council, and create it.</summary>
 <p>
 
 - Define the council of your DAO:
 
 ```bash
-export COUNCIL='["siddharthborderwala.testnet"]'
+export CONTRACT_ID=DAO_ACCOUNT.testnet
+```
+
+```bash
+export COUNCIL='["siddyboi.testnet","padiyar.testnet"]'
 ```
 
 - Configure the name, purpose, and initial council members of the DAO and convert the arguments in base64:
 
 ```bash
-export ARGS=`echo '{"name": "ca", "purpose": "Crypto Capabale Campus Ambassadors DAO", "council": '$COUNCIL'}' | base64`
+export ARGS='{"name": "ca-dao", "purpose": "Crypto Capabale Campus Ambassadors DAO", "council": '$COUNCIL'}'
 ```
 
 - Create the new DAO!:
 
 ```bash
-near call $CONTRACT_ID create "{\"name\": \"ca\", \"args\": \"$ARGS\"}" --accountId $CONTRACT_ID --amount 10 --gas 150000000000000
-```
-
-**Example Response:**
-
-```bash
-
+near deploy $CONTRACT_ID \
+  --wasmFile res/ambassadors_dao.wasm \
+  --initFunction "new" \
+  --initArgs $ARGS \
+  --accountId $CONTRACTID
 ```
 
 **Note:** If you see `false` at the bottom (after the transaction link) something went wrong. Check your arguments passed and target contracts and re-deploy.
+
+If you are prototyping you should create sub-accounts and deploy your smart contracts there. Once you don't need a particular version you can just delete that particular sub-account.
 
 </p>
 </details>
 
 <details>
-<summary>7. Verify successful deployment and policy configuration.</summary>
+<summary>5. Verify successful deployment and policy configuration.</summary>
 <p>
 
 The DAO deployment will create a new [sub-account](https://docs.near.org/docs/concepts/account#subaccounts) ( `genesis.YOUR_ACCOUNT.testnet` ) and deploy a Sputnik v2 DAO contract to it.
@@ -130,42 +107,6 @@ export SPUTNIK_ID=genesis.$CONTRACT_ID
 
 ```bash
 near view $SPUTNIK_ID get_policy
-```
-
-- Verify that the name, purpose, metadata, and council are all configured correctly. Also note the following default values:
-
-```json
-{
-  "roles": [
-    {
-      "name": "all",
-      "kind": "Everyone",
-      "permissions": ["*:AddProposal"],
-      "vote_policy": {}
-    },
-    {
-      "name": "council",
-      "kind": { "Group": ["council-member.testnet", "YOUR_ACCOUNT.testnet"] },
-      "permissions": [
-        "*:Finalize",
-        "*:AddProposal",
-        "*:VoteApprove",
-        "*:VoteReject",
-        "*:VoteRemove"
-      ],
-      "vote_policy": {}
-    }
-  ],
-  "default_vote_policy": {
-    "weight_kind": "RoleWeight",
-    "quorum": "0",
-    "threshold": [1, 2]
-  },
-  "proposal_bond": "1000000000000000000000000",
-  "proposal_period": "604800000000000",
-  "bounty_bond": "1000000000000000000000000",
-  "bounty_forgiveness_period": "86400000000000"
-}
 ```
 
 </p>

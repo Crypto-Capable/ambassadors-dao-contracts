@@ -38,3 +38,6 @@ pub const NCD_FORM_FILLED_REFERRAL_AMOUNT: Balance = ONE_NEAR / 10;
 
 /// 12.5 near tokens
 pub const CA_BONUS_AMOUNT: Balance = (ONE_NEAR / 10) * 125;
+
+/// 10 near tokens
+pub const CAMPUS_MOU_AMOUNT: Balance = 10 * ONE_NEAR;

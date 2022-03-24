@@ -10,12 +10,19 @@ pub type MiscellaneousPayout = Payout<Miscellaneous>;
 #[serde(crate = "near_sdk::serde")]
 pub enum Miscellaneous {
     ContentCreationBounty {
+        /// links to the content peices created
         links_to_content: Vec<ResourceLink>,
+        /// the amount that the proposer is expecting to receive
         expected_amount: u64,
+        /// a note/brief-description for this bounty
         note: String,
     },
-    CampusSigningMOU,
+    CampusSigningMOU {
+        /// link to the supporting document
+        supporting_document: ResourceLink,
+    },
     CampusAmbassadorBonus {
+        /// links to all the payouts showing credentials for getting a bonus
         links_to_payouts: Vec<ResourceLink>,
     },
 }
@@ -79,7 +86,10 @@ impl Contract {
                     // here the constant is in yoctonear
                     Promise::new(misc.proposer).transfer(amounts::CA_BONUS_AMOUNT);
                 }
-                Miscellaneous::CampusSigningMOU => {}
+                Miscellaneous::CampusSigningMOU { .. } => {
+                    // here the constant is in yoctonear
+                    Promise::new(misc.proposer).transfer(amounts::CAMPUS_MOU_AMOUNT);
+                }
             };
         }
     }

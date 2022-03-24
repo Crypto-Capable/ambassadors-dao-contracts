@@ -32,7 +32,7 @@ pub enum Bounty {
         /// link to the webinar meeting
         webinar_link: ResourceLink,
     },
-    ContentCoordniation {
+    ContentCoordination {
         /// a list of links to the content
         content_links: Vec<ResourceLink>,
         /// a brief summary about the story of creation of the content
@@ -109,7 +109,7 @@ impl Contract {
                     amounts::MEME_CONTEST_COMPLETION_AMOUNT
                 }
                 Bounty::Webinar { .. } => amounts::WEBINAR_COMPLETION_AMOUNT,
-                Bounty::ContentCoordniation { .. } => amounts::CONTENT_COORDINATION_AMOUNT,
+                Bounty::ContentCoordination { .. } => amounts::CONTENT_COORDINATION_AMOUNT,
             };
             Promise::new(bounty.proposer).transfer(tokens);
         }
