@@ -46,12 +46,43 @@ impl From<PayoutInput<Proposal>> for Payout<Proposal> {
     }
 }
 
-// proposal related function implementation
 #[near_bindgen]
 impl Contract {
     /// create a proposal payout
     pub fn add_payout_proposal(&mut self, payout: PayoutInput<Proposal>) -> u64 {
-        // validate input, seems like there is nothing to do here
+        // validate input
+        match &payout.information {
+            Proposal::Hackathon {
+                supporting_document,
+                ..
+            } => {
+                if supporting_document.trim().len() == 0
+                    || !supporting_document.starts_with("https://")
+                {
+                    panic!("ERR_INVALID_SUPPORTING_DOCUMENT")
+                }
+            }
+            Proposal::MemeContest {
+                supporting_document,
+                ..
+            } => {
+                if supporting_document.trim().len() == 0
+                    || !supporting_document.starts_with("https://")
+                {
+                    panic!("ERR_INVALID_SUPPORTING_DOCUMENT")
+                }
+            }
+            Proposal::Open {
+                supporting_document,
+                ..
+            } => {
+                if supporting_document.trim().len() == 0
+                    || !supporting_document.starts_with("https://")
+                {
+                    panic!("ERR_INVALID_SUPPORTING_DOCUMENT")
+                }
+            }
+        };
 
         // anyone can create this, no permission checks needed
 
@@ -61,6 +92,7 @@ impl Contract {
         self.last_proposal_id = new_id;
         new_id
     }
+
     /// act on a proposal payout
     pub fn act_payout_proposal(&mut self, id: u64, action: types::Action, note: Option<String>) {
         // check if proposal with id exists
@@ -74,8 +106,8 @@ impl Contract {
             _ => panic!("{}: {}", error::ERR_NOT_PERMITTED, "payout finalized"),
         }
         internal_act_payout(
-            self.policy.is_council_member(&env::signer_account_id()),
-            self.policy.get_council_size() as u64,
+            self.members.is_council_member(&env::signer_account_id()),
+            self.members.get_council_size() as u64,
             &mut proposal,
             action,
             note,

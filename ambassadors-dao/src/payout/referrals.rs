@@ -58,9 +58,35 @@ impl From<PayoutInput<Referral>> for Payout<Referral> {
 
 #[near_bindgen]
 impl Contract {
-    #[private]
+    /// create a new referral payout
     pub fn add_payout_referral(&mut self, payout: PayoutInput<Referral>) -> u64 {
-        // validate input, seems like there is nothing to do here
+        // validate input
+        match &payout.information {
+            Referral::AmbassadorRegistration { referred_id, .. } => {
+                if !(self.members.is_registered_ambassador(referred_id)
+                    || self.members.is_council_member(referred_id))
+                {
+                    panic!("ERR_REFERRED_MEMBER_NOT_FOUND");
+                }
+            }
+            Referral::NearCertifiedDeveloper {
+                referred_id,
+                proof_link,
+                ..
+            } => {
+                if self.members.is_registered_ambassador(referred_id) {
+                    panic!("ERR_REFERRED_MEMBER_NOT_FOUND");
+                }
+                if proof_link.trim().len() == 0 || !proof_link.starts_with("https://") {
+                    panic!("ERR_INVALID_PROOF_LINK")
+                }
+            }
+            Referral::Recruitment { referred_id, .. } => {
+                if self.members.is_registered_ambassador(referred_id) {
+                    panic!("ERR_REFERRED_MEMBER_NOT_FOUND");
+                }
+            }
+        };
 
         // anyone can create this, no permission checks needed
 
@@ -70,7 +96,8 @@ impl Contract {
         self.last_referral_id = new_id;
         new_id
     }
-    /// act on a proposal payout
+
+    /// act on a referral payout
     pub fn act_payout_referral(&mut self, id: u64, action: types::Action, note: Option<String>) {
         // check if proposal with id exists
         let mut referral = match self.referrals.get(&id) {
@@ -83,8 +110,8 @@ impl Contract {
             _ => panic!("{}: {}", error::ERR_NOT_PERMITTED, "payout finalized"),
         }
         internal_act_payout(
-            self.policy.is_council_member(&env::signer_account_id()),
-            self.policy.get_council_size() as u64,
+            self.members.is_council_member(&env::signer_account_id()),
+            self.members.get_council_size() as u64,
             &mut referral,
             action,
             note,

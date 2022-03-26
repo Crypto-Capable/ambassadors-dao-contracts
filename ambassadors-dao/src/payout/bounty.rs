@@ -18,6 +18,8 @@ pub enum Bounty {
         winners_info: Vec<SubmissionInfo>,
     },
     MemeContestCompletion {
+        /// number of registrations
+        num_of_registrations: u64,
         /// number of submissions
         num_of_submissions: u64,
         /// information of the winners
@@ -55,13 +57,64 @@ impl From<PayoutInput<Bounty>> for Payout<Bounty> {
     }
 }
 
-// proposal related function implementation
 #[near_bindgen]
 impl Contract {
     /// create a bounty payout
     pub fn add_payout_bounty(&mut self, payout: PayoutInput<Bounty>) -> u64 {
-        // validate input, seems like there is nothing to do here
-
+        // validate input
+        match &payout.information {
+            Bounty::HackathonCompletion {
+                num_of_registrations,
+                winners_info,
+                ..
+            } => {
+                if *num_of_registrations > 20 {
+                    panic!("ERR_MIN_SUBMISSION_LIMIT_NOT_SATISFIED")
+                }
+                if winners_info.len() != 3 {
+                    panic!("ERR_WINNERS_INFO_MUST_HAVE_THREE_ENTRIES")
+                }
+            }
+            Bounty::MemeContestCompletion {
+                num_of_registrations,
+                winners_info,
+                ..
+            } => {
+                if *num_of_registrations > 20 {
+                    panic!("ERR_MIN_SUBMISSION_LIMIT_NOT_SATISFIED")
+                }
+                if winners_info.len() != 3 {
+                    panic!("ERR_WINNERS_INFO_MUST_HAVE_THREE_ENTRIES")
+                }
+            }
+            Bounty::Webinar {
+                num_of_attendees,
+                webinar_link,
+                ..
+            } => {
+                if *num_of_attendees > 50 {
+                    panic!("ERR_MIN_ATTENDEES_LIMIT_NOT_SATISFIED")
+                }
+                if webinar_link.trim().len() == 0 || !webinar_link.starts_with("https://") {
+                    panic!("ERR_INVALID_WEBINAR_LINK")
+                }
+            }
+            Bounty::ContentCoordination {
+                content_links,
+                story,
+                tools_used,
+            } => {
+                if content_links.is_empty() {
+                    panic!("ERR_CONTENT_LINKS_CANNOT_BE_EMPTY")
+                }
+                if story.is_empty() {
+                    panic!("ERR_STORY_CANNOT_BE_EMPTY")
+                }
+                if tools_used.is_empty() {
+                    panic!("ERR_TOOLS_USED_CANNOT_BE_EMPTY")
+                }
+            }
+        };
         // anyone can create this, no permission checks needed
 
         // add the bounty to Contract.bountys
@@ -79,8 +132,8 @@ impl Contract {
             }
         };
         internal_act_payout(
-            self.policy.is_council_member(&env::signer_account_id()),
-            self.policy.get_council_size() as u64,
+            self.members.is_council_member(&env::signer_account_id()),
+            self.members.get_council_size() as u64,
             &mut bounty,
             action,
             note,

@@ -10,9 +10,6 @@ use payout::{Bounty, Miscellaneous, Proposal};
 
 use crate::*;
 
-/// TODO: Get payout input fields, for that create a derive proc_macro
-/// and put it on each of the enums and required structs
-
 /// This is format of output via JSON for the payout.
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
@@ -35,11 +32,6 @@ impl Contract {
         self.config.clone()
     }
 
-    /// Returns policy of this contract.
-    pub fn get_policy(&self) -> Policy {
-        self.policy.clone()
-    }
-
     /// Returns if blob with given hash is stored.
     pub fn has_blob(&self, hash: Base58CryptoHash) -> bool {
         env::storage_has_key(&CryptoHash::from(hash))
@@ -53,12 +45,12 @@ impl Contract {
 
     /// Returns if the account_id is a council member
     pub fn is_council_member(&self, account_id: AccountId) -> bool {
-        self.policy.is_council_member(&account_id)
+        self.members.is_council_member(&account_id)
     }
 
     /// Returns the referral token of the signer
     pub fn is_registered_ambassador(&self, account_id: AccountId) -> bool {
-        self.policy.is_registered_ambassador(&account_id)
+        self.members.is_registered_ambassador(&account_id)
     }
 
     /// Get specific proposal.

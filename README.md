@@ -80,8 +80,18 @@ export ARGS='{"name": "ca-dao", "purpose": "Crypto Capabale Campus Ambassadors D
 near deploy $CONTRACT_ID \
   --wasmFile res/ambassadors_dao.wasm \
   --initFunction "new" \
-  --initArgs $ARGS \
+  --initArgs "$ARGS" \
   --accountId $CONTRACTID
+```
+
+Example response -
+
+```bash
+Starting deployment. Account id: v1.daos-hub.testnet, node: https://rpc.testnet.near.org, helper: https://helper.testnet.near.org, file: res/ambassadors_dao.wasm
+Transaction Id 6CFo3KaPQ6NGFaakr3GYM6v9Pqkic3mqsEUZgoJaHzDC
+To see the transaction in the transaction explorer, please open this url in your browser
+https://explorer.testnet.near.org/transactions/6CFo3KaPQ6NGFaakr3GYM6v9Pqkic3mqsEUZgoJaHzDC
+Done deploying and initializing v1.daos-hub.testnet
 ```
 
 **Note:** If you see `false` at the bottom (after the transaction link) something went wrong. Check your arguments passed and target contracts and re-deploy.

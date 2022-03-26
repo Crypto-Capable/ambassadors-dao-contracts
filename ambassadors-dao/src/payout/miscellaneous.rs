@@ -44,7 +44,31 @@ impl From<PayoutInput<Miscellaneous>> for Payout<Miscellaneous> {
 impl Contract {
     /// create a miscellaneous payout
     pub fn add_payout_miscellaneous(&mut self, payout: PayoutInput<Miscellaneous>) -> u64 {
-        // validate input, seems like there is nothing to do here
+        // validate input
+        match &payout.information {
+            Miscellaneous::ContentCreationBounty {
+                links_to_content, ..
+            } => {
+                if links_to_content.is_empty() {
+                    panic!("ERR_INVALID_LINKS_TO_CONTENT")
+                }
+            }
+            Miscellaneous::CampusSigningMOU {
+                supporting_document,
+                ..
+            } => {
+                if supporting_document.trim().len() == 0
+                    || !supporting_document.starts_with("https://")
+                {
+                    panic!("ERR_INVALID_SUPPORTING_DOCUMENT")
+                }
+            }
+            Miscellaneous::CampusAmbassadorBonus { links_to_payouts } => {
+                if links_to_payouts.len() == 0 {
+                    panic!("ERR_INVALID_LINKS_TO_PAYOUTS")
+                }
+            }
+        };
 
         // anyone can create this, no permission checks needed
 
@@ -68,8 +92,8 @@ impl Contract {
             }
         };
         internal_act_payout(
-            self.policy.is_council_member(&env::signer_account_id()),
-            self.policy.get_council_size() as u64,
+            self.members.is_council_member(&env::signer_account_id()),
+            self.members.get_council_size() as u64,
             &mut misc,
             action,
             note,

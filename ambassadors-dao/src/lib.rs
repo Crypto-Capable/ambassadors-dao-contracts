@@ -7,17 +7,17 @@ use near_sdk::{env, near_bindgen, sys};
 use near_sdk::{AccountId, PanicOnDefault, Promise};
 use ran::*;
 
+use members::Members;
 use payout::{
     BountyPayout, MiscellaneousPayout, Payout, PayoutInput, ProposalPayout, Referral,
     ReferralPayout,
 };
-use policy::Policy;
 use types::Config;
 
 mod amounts;
 mod error;
+mod members;
 mod payout;
-mod policy;
 mod types;
 mod upgrade;
 mod vote;
@@ -32,7 +32,7 @@ pub mod views;
 #[derive(BorshSerialize, BorshDeserialize, PanicOnDefault)]
 pub struct Contract {
     /// defines the policy of the contract
-    pub policy: Policy,
+    pub members: Members,
     /// the configuration of the contract
     pub config: Config,
     /// proposal payouts
@@ -90,7 +90,7 @@ impl Contract {
                 .map(|(id, token)| (token.clone(), id.clone())),
         );
         Self {
-            policy: Policy::from(council_info),
+            members: Members::from_council(council_info),
             config: Config::new(name, purpose),
             proposals: LookupMap::new(b"p".to_vec()),
             last_proposal_id: 0,
@@ -126,15 +126,14 @@ impl Contract {
     pub fn register_ambassador(&mut self, token: Option<String>) -> bool {
         let signer = env::signer_account_id();
         // if ambassador already exists
-        if self.policy.is_registered_ambassador(&signer) {
+        if self.members.is_registered_ambassador(&signer) {
             return false;
         }
         // create a referral token for the new ambassador
         let ref_token = Self::internal_generate_referral_id();
-        // insert it in the policy
-        self.policy
-            .ambassadors
-            .insert(signer.clone(), ref_token.clone());
+        // add the new member and token into the ambassadors hashmap
+        self.members
+            .add_ambassador(signer.clone(), ref_token.clone());
         // insert the ref token in the referral ids hashmap
         self.referral_ids.insert(&ref_token, &signer);
 
@@ -243,28 +242,8 @@ impl Contract {
 
 #[cfg(test)]
 mod tests {
-    use near_sdk::test_utils::{accounts, VMContextBuilder};
-    use near_sdk::testing_env;
-
-    use super::*;
-
     #[test]
     fn generates_contract() {
         println!("it works");
-    }
-
-    #[test]
-    fn random_number() {
-        let mut context = VMContextBuilder::new();
-        testing_env!(context.predecessor_account_id(accounts(1)).build());
-        let contract = Contract::new(
-            "ca-dao".to_string(),
-            "dao".to_string(),
-            vec![AccountId::new_unchecked("sidtest.testnet".to_string())],
-        );
-        println!("{}", Contract::internal_generate_referral_id());
-        println!("{}", Contract::internal_generate_referral_id());
-        println!("{}", Contract::internal_generate_referral_id());
-        println!("{}", Contract::internal_generate_referral_id());
     }
 }

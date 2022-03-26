@@ -14,5 +14,3 @@ neardev
 
 **/nodemodules
 **/*.lock.json
-
-gen.js
