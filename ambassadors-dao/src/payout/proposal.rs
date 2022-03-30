@@ -112,6 +112,7 @@ impl Contract {
             action,
             note,
         );
+        self.proposals.insert(&id, &proposal);
         // check if payout state is approved
         if proposal.status == PayoutStatus::Approved {
             // here tokens is in near value

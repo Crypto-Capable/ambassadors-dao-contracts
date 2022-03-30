@@ -12,7 +12,7 @@ To this we have a function called `store_blob`, called as follows
 
 ```bash
 # store all the byte code into a variable
-NEW_VERSION_CODE='cat res/output.wasm'
+NEW_VERSION_CODE='cat res/ambassadors_dao.wasm'
 # 10 TGas
 GAS_100TGas="100000000000000"
 
@@ -38,7 +38,7 @@ When you need to deploy the upgraded contract and run the migration, use the fol
 
 ```bash
 # store all the byte code into a variable
-NEW_VERSION_CODE='cat res/output.wasm'
+NEW_VERSION_CODE='cat res/ambassadors_dao.wasm'
 # 10 TGas
 GAS_100TGas="100000000000000"
 
@@ -52,7 +52,7 @@ near call $CONTRACT_NAME upgrade_self --accountId $CONTRACT_NAME
 
 ```bash
 near deploy \
-  --wasmFile res/status_message.wasm \
+  --wasmFile res/ambassadors_dao.wasm \
   --initFunction "migrate" \
   --initArgs "{}" \
   --accountId $CONTRACT_NAME

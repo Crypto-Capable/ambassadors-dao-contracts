@@ -116,6 +116,7 @@ impl Contract {
             action,
             note,
         );
+        self.referrals.insert(&id, &referral);
         // check if payout state is approved
         if referral.status == PayoutStatus::Approved {
             // here tokens is in near value

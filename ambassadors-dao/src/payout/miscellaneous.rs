@@ -98,6 +98,7 @@ impl Contract {
             action,
             note,
         );
+        self.miscellaneous.insert(&id, &misc);
         if misc.status == PayoutStatus::Approved {
             match misc.info {
                 Miscellaneous::ContentCreationBounty {

@@ -138,6 +138,7 @@ impl Contract {
             action,
             note,
         );
+        self.bounties.insert(&id, &bounty);
         // check if payout state is approved
         if bounty.status == PayoutStatus::Approved {
             // send the respective winners tokens
