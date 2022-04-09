@@ -62,11 +62,21 @@ impl Contract {
     pub fn add_payout_referral(&mut self, payout: PayoutInput<Referral>) -> u64 {
         // validate input
         match &payout.information {
-            Referral::AmbassadorRegistration { referred_id, .. } => {
-                if !(self.members.is_registered_ambassador(referred_id)
-                    || self.members.is_council_member(referred_id))
+            Referral::AmbassadorRegistration {
+                referred_id,
+                referrer_id,
+            } => {
+                if !self.members.is_registered_ambassador(referred_id) {
+                    panic!("{}", error::ERR_REFERRED_MEMBER_NOT_FOUND);
+                }
+                if self
+                    .members
+                    .ambassadors
+                    .get(referrer_id)
+                    .unwrap()
+                    .registration_referral_used
                 {
-                    panic!("ERR_REFERRED_MEMBER_NOT_FOUND");
+                    panic!("REGISTRATION_REFERRAL_ALREADY_USED");
                 }
             }
             Referral::NearCertifiedDeveloper {
@@ -75,15 +85,13 @@ impl Contract {
                 ..
             } => {
                 if self.members.is_registered_ambassador(referred_id) {
-                    panic!("ERR_REFERRED_MEMBER_NOT_FOUND");
+                    panic!("{}", error::ERR_REFERRED_MEMBER_NOT_FOUND);
                 }
-                if proof_link.trim().len() == 0 || !proof_link.starts_with("https://") {
-                    panic!("ERR_INVALID_PROOF_LINK")
-                }
+                validation::assert_valid_resource_url(proof_link);
             }
             Referral::Recruitment { referred_id, .. } => {
                 if self.members.is_registered_ambassador(referred_id) {
-                    panic!("ERR_REFERRED_MEMBER_NOT_FOUND");
+                    panic!("{}", error::ERR_REFERRED_MEMBER_NOT_FOUND);
                 }
             }
         };
@@ -121,7 +129,15 @@ impl Contract {
         if referral.status == PayoutStatus::Approved {
             // here tokens is in near value
             let (payee, amount) = match referral.info {
-                Referral::AmbassadorRegistration { referred_id, .. } => {
+                Referral::AmbassadorRegistration {
+                    referred_id,
+                    referrer_id,
+                } => {
+                    self.members
+                        .ambassadors
+                        .get_mut(&referrer_id)
+                        .unwrap()
+                        .registration_referral_used = true;
                     (referred_id, amounts::CA_REGISTER_REFERRAL_AMOUNT)
                 }
                 Referral::Recruitment { referred_id, .. } => {

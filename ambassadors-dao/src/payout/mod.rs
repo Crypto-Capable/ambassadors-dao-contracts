@@ -73,7 +73,7 @@ impl Default for VotesCount {
 
 /// A Payout is a type of payout. Depeding on the type of the Payout
 /// a set of information is required.
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct Payout<T: Serialize> {
     /// the current status of the Payout

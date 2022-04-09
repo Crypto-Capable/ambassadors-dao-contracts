@@ -1,18 +1,17 @@
 //! Contains the Contract struct and its implementation
+
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::LookupMap;
 use near_sdk::json_types::Base58CryptoHash;
-use near_sdk::CryptoHash;
 use near_sdk::{env, near_bindgen, sys};
-use near_sdk::{AccountId, PanicOnDefault, Promise};
+use near_sdk::{AccountId, CryptoHash, PanicOnDefault, Promise};
+
 use ran::*;
 
 use members::Members;
-use payout::{
-    BountyPayout, MiscellaneousPayout, Payout, PayoutInput, ProposalPayout, Referral,
-    ReferralPayout,
-};
-use types::Config;
+use payout::PayoutInput;
+use payout::{BountyPayout, MiscellaneousPayout, Payout, ProposalPayout, Referral, ReferralPayout};
+use types::{Config, ReferralToken, RegistrationResult};
 
 mod amounts;
 mod error;
@@ -20,6 +19,7 @@ mod members;
 mod payout;
 mod types;
 mod upgrade;
+mod validation;
 mod vote;
 
 pub mod views;
@@ -51,12 +51,10 @@ pub struct Contract {
     pub referrals: LookupMap<u64, ReferralPayout>,
     /// the id of the last referral
     pub last_referral_id: u64,
-    /// store the referral ids as a map of <referral-id, account-id>
-    pub referral_ids: LookupMap<String, AccountId>,
+    /// referral tokens hash map
+    pub referral_tokens: LookupMap<ReferralToken, AccountId>,
     /// Large blob storage.
     pub blobs: LookupMap<CryptoHash, AccountId>,
-    // store the current USD conversion rate, conversion_rate is equal to the USD value of 1 Near token
-    // pub conversion_rate: Option<f32>,
 }
 
 #[near_bindgen]
@@ -77,20 +75,8 @@ impl Contract {
                 .into_iter()
                 .fold(0_u64, |acc, x| acc + (x as u64 * x as u64)),
         );
-        // generate the referral tokens for the council
-        let council_info = council
-            .iter()
-            .map(|id| (id.clone(), Self::internal_generate_referral_id()))
-            .collect::<Vec<_>>();
-        // create the referral lookup map
-        let mut ref_map = LookupMap::new(b"t".to_vec());
-        ref_map.extend(
-            council_info
-                .iter()
-                .map(|(id, token)| (token.clone(), id.clone())),
-        );
         Self {
-            members: Members::from_council(council_info),
+            members: Members::from_council(council),
             config: Config::new(name, purpose),
             proposals: LookupMap::new(b"p".to_vec()),
             last_proposal_id: 0,
@@ -100,7 +86,7 @@ impl Contract {
             last_miscellaneous_id: 0,
             referrals: LookupMap::new(b"r".to_vec()),
             last_referral_id: 0,
-            referral_ids: ref_map,
+            referral_tokens: LookupMap::new(b"t".to_vec()),
             blobs: LookupMap::new(b"l".to_vec()),
         }
     }
@@ -123,35 +109,50 @@ impl Contract {
 
     /// Perform required actions when an ambassador registers
     /// Requires the sender to send a 24 characters long alphanumeric referral token
-    pub fn register_ambassador(&mut self, token: Option<String>) -> bool {
+    pub fn register_ambassador(&mut self, token: Option<String>) -> RegistrationResult {
         let signer = env::signer_account_id();
         // if ambassador already exists
         if self.members.is_registered_ambassador(&signer) {
-            return false;
+            return RegistrationResult::new(false, None);
         }
-        // create a referral token for the new ambassador
+        // create a referral token for the ambassador
         let ref_token = Self::internal_generate_referral_id();
-        // add the new member and token into the ambassadors hashmap
-        self.members
-            .add_ambassador(signer.clone(), ref_token.clone());
         // insert the ref token in the referral ids hashmap
-        self.referral_ids.insert(&ref_token, &signer);
+        self.referral_tokens.insert(&ref_token, &signer);
+
+        // create a status message
+        let mut result = RegistrationResult {
+            status: true,
+            message: Some("You have been registered successfully".to_string()),
+        };
 
         // check if there was a referral token used by the new ambassador
         if let Some(token) = token {
-            if let Some(id) = self.referral_ids.get(&token) {
+            if let Some(id) = self.referral_tokens.get(&token) {
+                // create a profile
+                self.members
+                    .add_ambassador(signer.clone(), ref_token.clone(), true);
                 // add payout record
                 self.add_payout_referral(PayoutInput::<Referral> {
-                    description: "Registration referral payout, pre-approved by DAO".to_string(),
+                    description: "Ambassador registration referral".to_string(),
                     information: Referral::AmbassadorRegistration {
                         referrer_id: signer,
-                        referred_id: id.clone(),
+                        referred_id: id,
                     },
                 });
+            } else {
+                result.message = Some(
+                    "Your registration was successful but the referral token was invalid"
+                        .to_string(),
+                );
             }
+        } else {
+            // create a profile
+            self.members
+                .add_ambassador(signer.clone(), ref_token.clone(), false);
         }
 
-        return true;
+        result
     }
 
     /// Remove blob from contract storage and pay back to original storer.
@@ -180,10 +181,10 @@ pub extern "C" fn store_blob() {
         // Load input into register 0.
         sys::input(0);
         // Compute sha256 hash of register 0 and store in 1.
-        sys::sha256(u64::MAX as _, 0 as _, 1);
+        sys::sha256(u64::MAX as _, 0_u64, 1);
         // Check if such blob already stored.
         assert_eq!(
-            sys::storage_has_key(u64::MAX as _, 1 as _),
+            sys::storage_has_key(u64::MAX as _, 1_u64),
             0,
             "ERR_ALREADY_EXISTS"
         );
@@ -196,7 +197,7 @@ pub extern "C" fn store_blob() {
             storage_cost
         );
         // Store value of register 0 into key = register 1.
-        sys::storage_write(u64::MAX as _, 1 as _, u64::MAX as _, 0 as _, 2);
+        sys::storage_write(u64::MAX as _, 1_u64, u64::MAX as _, 0_u64, 2);
         // Load register 1 into blob_hash and save into LookupMap.
         let blob_hash = [0u8; 32];
         sys::read_register(1, blob_hash.as_ptr() as _);
@@ -215,11 +216,11 @@ pub extern "C" fn store_blob() {
 impl Contract {
     /// Generate a 24 characters long referral ID.
     /// It contains [a-zA-Z0-9] mcharacters
-    pub fn internal_generate_referral_id() -> String {
+    pub fn internal_generate_referral_id() -> ReferralToken {
         let mut id_vec = vec![0; 24];
         let ru8 = Rnum::newu8();
-        for i in 0..24 {
-            id_vec[i] = match ru8.rannum_in(0., 9.) {
+        for item in id_vec.iter_mut().take(24) {
+            *item = match ru8.rannum_in(0., 9.) {
                 Rnum::U8(v) => {
                     if v > 4 {
                         match ru8.rannum_in(97., 122.) {

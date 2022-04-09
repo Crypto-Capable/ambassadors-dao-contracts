@@ -2,6 +2,8 @@ use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::Balance;
 
+pub type ReferralToken = String;
+
 // 1 yN to prevent access key fraud.
 // pub const ONE_YOCTO_NEAR: Balance = 1;
 
@@ -43,5 +45,18 @@ pub enum Action {
 impl Action {
     pub fn to_policy_label(&self) -> String {
         format!("{:?}", self)
+    }
+}
+
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Debug, Clone)]
+#[serde(crate = "near_sdk::serde")]
+pub struct RegistrationResult {
+    pub status: bool,
+    pub message: Option<String>,
+}
+
+impl RegistrationResult {
+    pub fn new(status: bool, message: Option<String>) -> Self {
+        Self { status, message }
     }
 }

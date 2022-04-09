@@ -27,9 +27,9 @@ pub(crate) fn upgrade_self(hash: &[u8]) {
             promise_id,
             method_name.len() as _,
             method_name.as_ptr() as _,
-            0 as _,
-            0 as _,
-            0 as _,
+            0_u64,
+            0_u64,
+            0_u64,
             attached_gas.0,
         );
     }

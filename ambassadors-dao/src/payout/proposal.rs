@@ -56,31 +56,19 @@ impl Contract {
                 supporting_document,
                 ..
             } => {
-                if supporting_document.trim().len() == 0
-                    || !supporting_document.starts_with("https://")
-                {
-                    panic!("ERR_INVALID_SUPPORTING_DOCUMENT")
-                }
+                validation::assert_valid_resource_url(supporting_document);
             }
             Proposal::MemeContest {
                 supporting_document,
                 ..
             } => {
-                if supporting_document.trim().len() == 0
-                    || !supporting_document.starts_with("https://")
-                {
-                    panic!("ERR_INVALID_SUPPORTING_DOCUMENT")
-                }
+                validation::assert_valid_resource_url(supporting_document);
             }
             Proposal::Open {
                 supporting_document,
                 ..
             } => {
-                if supporting_document.trim().len() == 0
-                    || !supporting_document.starts_with("https://")
-                {
-                    panic!("ERR_INVALID_SUPPORTING_DOCUMENT")
-                }
+                validation::assert_valid_resource_url(supporting_document);
             }
         };
 
@@ -127,7 +115,7 @@ impl Contract {
                     estimated_budget, ..
                 } => estimated_budget,
             };
-            Promise::new(proposal.proposer).transfer((tokens as u128) * ONE_NEAR);
+            Promise::new(proposal.proposer.clone()).transfer((tokens as u128) * ONE_NEAR);
         }
     }
 }

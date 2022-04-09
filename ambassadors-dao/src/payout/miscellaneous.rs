@@ -57,14 +57,10 @@ impl Contract {
                 supporting_document,
                 ..
             } => {
-                if supporting_document.trim().len() == 0
-                    || !supporting_document.starts_with("https://")
-                {
-                    panic!("ERR_INVALID_SUPPORTING_DOCUMENT")
-                }
+                validation::assert_valid_resource_url(supporting_document);
             }
             Miscellaneous::CampusAmbassadorBonus { links_to_payouts } => {
-                if links_to_payouts.len() == 0 {
+                if links_to_payouts.is_empty() {
                     panic!("ERR_INVALID_LINKS_TO_PAYOUTS")
                 }
             }

@@ -95,9 +95,7 @@ impl Contract {
                 if *num_of_attendees > 50 {
                     panic!("ERR_MIN_ATTENDEES_LIMIT_NOT_SATISFIED")
                 }
-                if webinar_link.trim().len() == 0 || !webinar_link.starts_with("https://") {
-                    panic!("ERR_INVALID_WEBINAR_LINK")
-                }
+                validation::assert_valid_resource_url(webinar_link);
             }
             Bounty::ContentCoordination {
                 content_links,
