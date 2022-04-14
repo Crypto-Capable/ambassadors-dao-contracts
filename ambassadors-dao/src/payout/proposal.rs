@@ -1,7 +1,7 @@
 use near_sdk::{env, near_bindgen};
 
 use super::{
-    types::{usd_to_balance, Action, USD},
+    types::{Action, USD},
     *,
 };
 
