@@ -1,6 +1,6 @@
 use near_sdk::{env, near_bindgen};
 
-use super::*;
+use super::{types::Action, *};
 
 pub type BountyPayout = Payout<Bounty>;
 
@@ -121,8 +121,9 @@ impl Contract {
         self.last_bounty_id = new_id;
         new_id
     }
+
     /// act on a bounty payout
-    pub fn act_payout_bounty(&mut self, id: u64, action: types::Action, note: Option<String>) {
+    pub fn act_payout_bounty(&mut self, id: u64, action: Action, note: Option<String>) {
         let mut bounty = match self.bounties.get(&id) {
             Some(b) => b,
             None => {
@@ -141,29 +142,61 @@ impl Contract {
         if bounty.status == PayoutStatus::Approved {
             // send the respective winners tokens
             // here tokens is in yoctonear
-            let tokens = match bounty.info {
+            let transfers = match bounty.info {
                 Bounty::HackathonCompletion { winners_info, .. } => {
-                    Promise::new(winners_info[0].account_id.clone())
-                        .transfer(amounts::HACKATHON_FIRST_PLACE_AMOUNT);
-                    Promise::new(winners_info[1].account_id.clone())
-                        .transfer(amounts::HACKATHON_SECOND_PLACE_AMOUNT);
-                    Promise::new(winners_info[2].account_id.clone())
-                        .transfer(amounts::HACKATHON_THIRD_PLACE_AMOUNT);
-                    amounts::HACKATHON_COMPLETION_AMOUNT
+                    vec![
+                        (
+                            bounty.proposer.clone(),
+                            amounts::HACKATHON_COMPLETION_AMOUNT,
+                        ),
+                        (
+                            winners_info[0].account_id.clone(),
+                            amounts::HACKATHON_FIRST_PLACE_AMOUNT,
+                        ),
+                        (
+                            winners_info[1].account_id.clone(),
+                            amounts::HACKATHON_SECOND_PLACE_AMOUNT,
+                        ),
+                        (
+                            winners_info[2].account_id.clone(),
+                            amounts::HACKATHON_THIRD_PLACE_AMOUNT,
+                        ),
+                    ]
                 }
                 Bounty::MemeContestCompletion { winners_info, .. } => {
-                    Promise::new(winners_info[0].account_id.clone())
-                        .transfer(amounts::MEME_CONTEST_FIRST_PLACE_AMOUNT);
-                    Promise::new(winners_info[1].account_id.clone())
-                        .transfer(amounts::MEME_CONTEST_SECOND_PLACE_AMOUNT);
-                    Promise::new(winners_info[2].account_id.clone())
-                        .transfer(amounts::MEME_CONTEST_THIRD_PLACE_AMOUNT);
-                    amounts::MEME_CONTEST_COMPLETION_AMOUNT
+                    vec![
+                        (
+                            bounty.proposer.clone(),
+                            amounts::MEME_CONTEST_COMPLETION_AMOUNT,
+                        ),
+                        (
+                            winners_info[0].account_id.clone(),
+                            amounts::MEME_CONTEST_FIRST_PLACE_AMOUNT,
+                        ),
+                        (
+                            winners_info[1].account_id.clone(),
+                            amounts::MEME_CONTEST_SECOND_PLACE_AMOUNT,
+                        ),
+                        (
+                            winners_info[2].account_id.clone(),
+                            amounts::MEME_CONTEST_THIRD_PLACE_AMOUNT,
+                        ),
+                    ]
                 }
-                Bounty::Webinar { .. } => amounts::WEBINAR_COMPLETION_AMOUNT,
-                Bounty::ContentCoordination { .. } => amounts::CONTENT_COORDINATION_AMOUNT,
+                Bounty::Webinar { .. } => {
+                    vec![(bounty.proposer, amounts::WEBINAR_COMPLETION_AMOUNT)]
+                }
+                Bounty::ContentCoordination { .. } => {
+                    vec![(bounty.proposer, amounts::CONTENT_COORDINATION_AMOUNT)]
+                }
             };
-            Promise::new(bounty.proposer).transfer(tokens);
+            // get the exchange rate
+            self.get_exchange_rate().then(ext::make_transfers(
+                transfers,
+                env::current_account_id(),
+                0,
+                env::used_gas() - env::prepaid_gas(),
+            ));
         }
     }
 }

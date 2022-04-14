@@ -96,6 +96,12 @@ pub(crate) fn internal_act_payout<T: Serialize>(
     action: types::Action,
     note: Option<String>,
 ) {
+    // if proposal is not under consideration, it is final
+    match payout.status {
+        PayoutStatus::UnderConsideration => {}
+        _ => panic!("{}: {}", error::ERR_NOT_PERMITTED, "payout finalized"),
+    }
+
     let signer = env::signer_account_id();
 
     match action {

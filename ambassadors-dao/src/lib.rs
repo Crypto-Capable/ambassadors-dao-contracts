@@ -3,15 +3,16 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::LookupMap;
 use near_sdk::json_types::Base58CryptoHash;
-use near_sdk::{env, near_bindgen, sys};
+use near_sdk::{env, ext_contract, near_bindgen, serde_json::json, sys};
 use near_sdk::{AccountId, CryptoHash, PanicOnDefault, Promise};
+use std::str::FromStr;
 
 use ran::*;
 
 use members::Members;
 use payout::PayoutInput;
 use payout::{BountyPayout, MiscellaneousPayout, Payout, ProposalPayout, Referral, ReferralPayout};
-use types::{Config, ReferralToken, RegistrationResult};
+use types::{usd_to_balance, Config, ReferralToken, RegistrationResult, USD};
 
 mod amounts;
 mod error;
@@ -26,6 +27,14 @@ pub mod views;
 
 // TODO: create a proc_macro for generate meta data about the type of information
 // that each Payout type needs for creation
+
+const ORACLE_CONTRACT_ID: &str = "v1.nearacle.testnet";
+
+#[ext_contract(ext)]
+pub trait CrossContract {
+    fn get_exchange_rate(&self) -> f64;
+    fn make_transfers(&self, transfers: Vec<(AccountId, USD)>, #[callback_unwrap] cur: f64);
+}
 
 /// The main contract governing Ambassadors DAO
 #[near_bindgen]
@@ -105,6 +114,27 @@ impl Contract {
         );
         let this: Contract = env::state_read().expect(error::ERR_CONTRACT_NOT_INITIALIZED);
         this
+    }
+
+    #[private]
+    pub fn get_exchange_rate(&self) -> Promise {
+        Promise::new(AccountId::from_str(ORACLE_CONTRACT_ID).unwrap()).function_call(
+            "get_rate".to_string(),
+            json!({
+                "currency":"NEAR",
+            })
+            .to_string()
+            .into(),
+            0 as _,
+            env::used_gas() - env::prepaid_gas(),
+        )
+    }
+
+    #[private]
+    pub fn make_transfers(&self, transfers: Vec<(AccountId, USD)>, #[callback_unwrap] rate: f64) {
+        for (payee, usd_amount) in transfers {
+            Promise::new(payee).transfer(usd_to_balance(usd_amount, rate));
+        }
     }
 
     /// Perform required actions when an ambassador registers

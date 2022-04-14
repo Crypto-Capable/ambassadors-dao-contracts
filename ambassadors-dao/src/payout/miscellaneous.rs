@@ -1,7 +1,6 @@
-use crate::types::ONE_NEAR;
 use near_sdk::{env, near_bindgen};
 
-use super::*;
+use super::{types::Action, *};
 
 pub type MiscellaneousPayout = Payout<Miscellaneous>;
 
@@ -13,7 +12,7 @@ pub enum Miscellaneous {
         /// links to the content peices created
         links_to_content: Vec<ResourceLink>,
         /// the amount that the proposer is expecting to receive
-        expected_amount: u64,
+        expected_amount: types::USD,
         /// a note/brief-description for this bounty
         note: String,
     },
@@ -75,12 +74,7 @@ impl Contract {
         new_id
     }
     /// act on a miscellaneous payout
-    pub fn act_payout_miscellaneous(
-        &mut self,
-        id: u64,
-        action: types::Action,
-        note: Option<String>,
-    ) {
+    pub fn act_payout_miscellaneous(&mut self, id: u64, action: Action, note: Option<String>) {
         let mut misc = match self.miscellaneous.get(&id) {
             Some(m) => m,
             None => {
@@ -96,22 +90,24 @@ impl Contract {
         );
         self.miscellaneous.insert(&id, &misc);
         if misc.status == PayoutStatus::Approved {
-            match misc.info {
+            // get the exchange rate
+            let transfer = match misc.info {
                 Miscellaneous::ContentCreationBounty {
                     expected_amount, ..
-                } => {
-                    // here expected amount is in near
-                    Promise::new(misc.proposer).transfer((expected_amount as u128) * ONE_NEAR);
-                }
+                } => (misc.proposer, expected_amount),
                 Miscellaneous::CampusAmbassadorBonus { .. } => {
-                    // here the constant is in yoctonear
-                    Promise::new(misc.proposer).transfer(amounts::CA_BONUS_AMOUNT);
+                    (misc.proposer, amounts::CA_BONUS_AMOUNT)
                 }
                 Miscellaneous::CampusSigningMOU { .. } => {
-                    // here the constant is in yoctonear
-                    Promise::new(misc.proposer).transfer(amounts::CAMPUS_MOU_AMOUNT);
+                    (misc.proposer, amounts::CAMPUS_MOU_AMOUNT)
                 }
             };
+            self.get_exchange_rate().then(ext::make_transfers(
+                vec![transfer],
+                env::current_account_id(),
+                0,
+                env::used_gas() - env::prepaid_gas(),
+            ));
         }
     }
 }

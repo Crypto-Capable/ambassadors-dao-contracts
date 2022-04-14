@@ -14,7 +14,7 @@ Pre-requisits to run the smart contracts on your system
 2. [NEAR-CLI](https://docs.near.org/docs/tools/near-cli#setup)
 3. [Rust](https://www.rust-lang.org)
 
-Once your account is setup and all the components are installed on your system, follow the next steps to create a DAO factory and a DAO.
+Once your account is setup and all the components are installed on your system, follow the next steps to create a DAO.
 
 <details>
 <summary>1. Login with your account.</summary>

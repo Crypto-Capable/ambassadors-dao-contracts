@@ -1,7 +1,7 @@
 use near_sdk::AccountId;
 use near_sdk::{env, near_bindgen};
 
-use super::*;
+use super::{types::Action, *};
 
 pub type ReferralPayout = Payout<Referral>;
 
@@ -106,17 +106,12 @@ impl Contract {
     }
 
     /// act on a referral payout
-    pub fn act_payout_referral(&mut self, id: u64, action: types::Action, note: Option<String>) {
+    pub fn act_payout_referral(&mut self, id: u64, action: Action, note: Option<String>) {
         // check if proposal with id exists
         let mut referral = match self.referrals.get(&id) {
             Some(p) => p,
             None => panic!("{}", error::ERR_PROPOSAL_NOT_FOUND),
         };
-        // if proposal is not under consideration, it is final
-        match referral.status {
-            PayoutStatus::UnderConsideration => {}
-            _ => panic!("{}: {}", error::ERR_NOT_PERMITTED, "payout finalized"),
-        }
         internal_act_payout(
             self.members.is_council_member(&env::signer_account_id()),
             self.members.get_council_size() as u64,
@@ -128,7 +123,7 @@ impl Contract {
         // check if payout state is approved
         if referral.status == PayoutStatus::Approved {
             // here tokens is in near value
-            let (payee, amount) = match referral.info {
+            let transfer = match referral.info {
                 Referral::AmbassadorRegistration {
                     referred_id,
                     referrer_id,
@@ -153,7 +148,12 @@ impl Contract {
                     },
                 ),
             };
-            Promise::new(payee).transfer(amount);
+            self.get_exchange_rate().then(ext::make_transfers(
+                vec![transfer],
+                env::current_account_id(),
+                0,
+                env::used_gas() - env::prepaid_gas(),
+            ));
         }
     }
 }

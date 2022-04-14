@@ -1,17 +1,20 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::Balance;
+use near_sdk::{Balance, ONE_NEAR};
 
 pub type ReferralToken = String;
 
-// 1 yN to prevent access key fraud.
-// pub const ONE_YOCTO_NEAR: Balance = 1;
+pub type USD = f64;
 
-/// 1 N
-pub const ONE_NEAR: Balance = 1_000_000_000_000_000_000_000_000;
-
-// Gas for single ft_transfer call.
-// pub const GAS_FOR_FT_TRANSFER: Gas = Gas(10_000_000_000_000);
+pub(crate) fn usd_to_balance(amount: USD, rate: f64) -> Balance {
+    let mut total_usd = amount * rate;
+    let mut divisor = 1_u128;
+    while total_usd.fract() > 1e-8 {
+        total_usd *= 10_f64;
+        divisor *= 10;
+    }
+    (total_usd.trunc() as u128) * (ONE_NEAR / divisor)
+}
 
 /// Configuration of the DAO.
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
