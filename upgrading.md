@@ -51,7 +51,7 @@ near call $CONTRACT_NAME upgrade_self --accountId $CONTRACT_NAME
 ### Option 2
 
 ```bash
-near deploy \
+near deploy $CONTRACT_NAME \
   --wasmFile res/ambassadors_dao.wasm \
   --initFunction "migrate" \
   --initArgs "{}" \

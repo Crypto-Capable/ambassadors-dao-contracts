@@ -68,7 +68,7 @@ impl Contract {
                 winners_info,
                 ..
             } => {
-                if *num_of_registrations > 20 {
+                if *num_of_registrations < 20 {
                     panic!("ERR_MIN_SUBMISSION_LIMIT_NOT_SATISFIED")
                 }
                 if winners_info.len() != 3 {
@@ -80,7 +80,7 @@ impl Contract {
                 winners_info,
                 ..
             } => {
-                if *num_of_registrations > 20 {
+                if *num_of_registrations < 20 {
                     panic!("ERR_MIN_SUBMISSION_LIMIT_NOT_SATISFIED")
                 }
                 if winners_info.len() != 3 {
@@ -92,7 +92,7 @@ impl Contract {
                 webinar_link,
                 ..
             } => {
-                if *num_of_attendees > 50 {
+                if *num_of_attendees < 50 {
                     panic!("ERR_MIN_ATTENDEES_LIMIT_NOT_SATISFIED")
                 }
                 validation::assert_valid_resource_url(webinar_link);
