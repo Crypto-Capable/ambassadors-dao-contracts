@@ -141,48 +141,78 @@ impl Contract {
     /// Requires the sender to send a 24 characters long alphanumeric referral token
     pub fn register_ambassador(&mut self, token: Option<String>) -> RegistrationResult {
         let signer = env::signer_account_id();
-        // if ambassador already exists
-        if self.members.is_registered_ambassador(&signer) {
-            return RegistrationResult::new(false, None);
-        }
-        // create a referral token for the ambassador
-        let ref_token = Self::internal_generate_referral_id();
-        // insert the ref token in the referral ids hashmap
-        self.referral_tokens.insert(&ref_token, &signer);
+        // let's see if the ambassadors is registered
+        match self.members.ambassadors.get(&signer) {
+            Some(m) => {
+                // if the registration referral is used
+                if m.registration_referral_used {
+                    return RegistrationResult::new(
+                        false,
+                        "You have already used your registration referral".to_string(),
+                    );
+                }
 
-        // create a status message
-        let mut result = RegistrationResult {
-            status: true,
-            message: Some("You have been registered successfully".to_string()),
-        };
+                if let Some(t) = &token {
+                    match self.referral_tokens.get(t) {
+                        Some(account_id) => {
+                            // we check if the token belongs to the signer
+                            if account_id == signer {
+                                return RegistrationResult::new(
+                                    false,
+                                    "Cannot use your own referral token".to_string(),
+                                );
+                            }
+                        }
+                        None => {}
+                    };
+                }
 
-        // check if there was a referral token used by the new ambassador
-        if let Some(token) = token {
-            if let Some(id) = self.referral_tokens.get(&token) {
-                // create a profile
-                self.members
-                    .add_ambassador(signer.clone(), ref_token.clone(), true);
-                // add payout record
-                self.add_payout_referral(PayoutInput::<Referral> {
-                    description: "Ambassador registration referral".to_string(),
-                    information: Referral::AmbassadorRegistration {
-                        referrer_id: signer,
-                        referred_id: id,
-                    },
-                });
-            } else {
-                result.message = Some(
-                    "Your registration was successful but the referral token was invalid"
-                        .to_string(),
-                );
+                RegistrationResult::new(
+                    false,
+                    "Registration referral payout created successfully".to_string(),
+                )
             }
-        } else {
-            // create a profile
-            self.members
-                .add_ambassador(signer.clone(), ref_token.clone(), false);
-        }
+            None => {
+                // create a referral token for the ambassador
+                let ref_token = Self::internal_generate_referral_id();
+                // insert the ref token in the referral ids hashmap
+                self.referral_tokens.insert(&ref_token, &signer);
 
-        result
+                // create a status message
+                let mut result = RegistrationResult {
+                    status: true,
+                    message: "You have been registered successfully".to_string(),
+                };
+
+                if let Some(t) = token {
+                    if let Some(id) = self.referral_tokens.get(&t) {
+                        // create a profile
+                        self.members
+                            .add_ambassador(signer.clone(), ref_token.clone(), true);
+                        // add payout record
+                        self.add_payout_referral(PayoutInput::<Referral> {
+                            description: "Ambassador registration referral".to_string(),
+                            information: Referral::AmbassadorRegistration {
+                                referrer_id: signer,
+                                referred_id: id,
+                            },
+                        });
+                    } else {
+                        self.members
+                            .add_ambassador(signer.clone(), ref_token.clone(), false);
+                        result.message =
+                            "Your registration was successful but the referral token was invalid"
+                                .to_string();
+                    }
+                } else {
+                    // create a profile
+                    self.members
+                        .add_ambassador(signer.clone(), ref_token.clone(), false);
+                }
+
+                result
+            }
+        }
     }
 
     /// Remove blob from contract storage and pay back to original storer.

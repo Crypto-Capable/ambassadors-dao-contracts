@@ -55,11 +55,11 @@ impl Action {
 #[serde(crate = "near_sdk::serde")]
 pub struct RegistrationResult {
     pub status: bool,
-    pub message: Option<String>,
+    pub message: String,
 }
 
 impl RegistrationResult {
-    pub fn new(status: bool, message: Option<String>) -> Self {
+    pub fn new(status: bool, message: String) -> Self {
         Self { status, message }
     }
 }
