@@ -141,37 +141,65 @@ impl Contract {
     /// Requires the sender to send a 24 characters long alphanumeric referral token
     pub fn register_ambassador(&mut self, token: Option<String>) -> RegistrationResult {
         let signer = env::signer_account_id();
-        // let's see if the ambassadors is registered
+
         match self.members.ambassadors.get(&signer) {
+            // if the ambassadors is registered
+            // it means this is being called for creating a registration referral
             Some(m) => {
-                // if the registration referral is used
+                // if the registration referral has been used already
                 if m.registration_referral_used {
                     return RegistrationResult::new(
                         false,
                         "You have already used your registration referral".to_string(),
+                        None,
                     );
                 }
-
+                // registration referral has not been used already
                 if let Some(t) = &token {
+                    // lets get the account id to whom the referral token belongs
                     match self.referral_tokens.get(t) {
+                        // valid referral token
                         Some(account_id) => {
-                            // we check if the token belongs to the signer
+                            // if the token belongs to the signer
                             if account_id == signer {
                                 return RegistrationResult::new(
                                     false,
                                     "Cannot use your own referral token".to_string(),
+                                    None,
+                                );
+                            } else {
+                                let ref_id = self.add_payout_referral(PayoutInput::<Referral> {
+                                    description: "Ambassador registration referral".to_string(),
+                                    information: Referral::AmbassadorRegistration {
+                                        referrer_id: signer,
+                                        referred_id: account_id,
+                                    },
+                                });
+                                return RegistrationResult::new(
+                                    false,
+                                    "Registration referral payout created successfully".to_string(),
+                                    Some(ref_id),
                                 );
                             }
                         }
-                        None => {}
-                    };
+                        // invalid referral token
+                        None => {
+                            return RegistrationResult::new(
+                                false,
+                                "Invalid referral token".to_string(),
+                                None,
+                            );
+                        }
+                    }
+                } else {
+                    return RegistrationResult::new(
+                        false,
+                        "Referral token required".to_string(),
+                        None,
+                    );
                 }
-
-                RegistrationResult::new(
-                    false,
-                    "Registration referral payout created successfully".to_string(),
-                )
             }
+            // the ambassador is not registered
             None => {
                 // create a referral token for the ambassador
                 let ref_token = Self::internal_generate_referral_id();
@@ -182,6 +210,7 @@ impl Contract {
                 let mut result = RegistrationResult {
                     status: true,
                     message: "You have been registered successfully".to_string(),
+                    payout_referral_id: None,
                 };
 
                 if let Some(t) = token {
@@ -190,13 +219,14 @@ impl Contract {
                         self.members
                             .add_ambassador(signer.clone(), ref_token.clone(), true);
                         // add payout record
-                        self.add_payout_referral(PayoutInput::<Referral> {
+                        let ref_id = self.add_payout_referral(PayoutInput::<Referral> {
                             description: "Ambassador registration referral".to_string(),
                             information: Referral::AmbassadorRegistration {
                                 referrer_id: signer,
                                 referred_id: id,
                             },
                         });
+                        result.payout_referral_id = Some(ref_id);
                     } else {
                         self.members
                             .add_ambassador(signer.clone(), ref_token.clone(), false);

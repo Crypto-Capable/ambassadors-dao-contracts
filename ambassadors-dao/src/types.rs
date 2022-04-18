@@ -56,10 +56,15 @@ impl Action {
 pub struct RegistrationResult {
     pub status: bool,
     pub message: String,
+    pub payout_referral_id: Option<u64>,
 }
 
 impl RegistrationResult {
-    pub fn new(status: bool, message: String) -> Self {
-        Self { status, message }
+    pub fn new(status: bool, message: String, payout_referral_id: Option<u64>) -> Self {
+        Self {
+            status,
+            message,
+            payout_referral_id,
+        }
     }
 }
