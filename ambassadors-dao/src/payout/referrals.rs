@@ -105,6 +105,44 @@ impl Contract {
         new_id
     }
 
+    // Add a registration referral using a referral token
+    pub fn add_registration_referral_with_token(&mut self, token: String) -> u64 {
+        let signer = env::signer_account_id();
+        let ambassador: &mut members::AmbassadorProfile =
+            match self.members.ambassadors.get_mut(&signer) {
+                None => {
+                    panic!("{}", error::ERR_AMBASSADOR_NOT_FOUND);
+                }
+                Some(m) => m,
+            };
+        if ambassador.registration_referral_used {
+            panic!("{}", error::ERR_NOT_PERMITTED);
+        }
+        // lets get the account id to whom the referral token belongs
+        match self.referral_tokens.get(&token) {
+            // valid referral token
+            Some(account_id) => {
+                // if the token belongs to the signer
+                if account_id == signer {
+                    panic!("{}", error::ERR_NOT_PERMITTED);
+                } else {
+                    ambassador.registration_referral_used = true;
+                    self.add_payout_referral(PayoutInput::<Referral> {
+                        description: "Ambassador registration referral".to_string(),
+                        information: Referral::AmbassadorRegistration {
+                            referrer_id: signer,
+                            referred_id: account_id,
+                        },
+                    })
+                }
+            }
+            // invalid referral token
+            None => {
+                panic!("{}", error::ERR_INVALID_REFERRAL_TOKEN);
+            }
+        }
+    }
+
     /// act on a referral payout
     pub fn act_payout_referral(&mut self, id: u64, action: Action, note: Option<String>) {
         // check if proposal with id exists

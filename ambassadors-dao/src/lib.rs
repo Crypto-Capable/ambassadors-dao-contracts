@@ -28,12 +28,40 @@ pub mod views;
 // TODO: create a proc_macro for generate meta data about the type of information
 // that each Payout type needs for creation
 
-const ORACLE_CONTRACT_ID: &str = "v1.nearacle.testnet";
-
 #[ext_contract(ext)]
 pub trait CrossContract {
     fn get_exchange_rate(&self) -> f64;
     fn make_transfers(&self, transfers: Vec<(AccountId, USD)>, #[callback_unwrap] cur: f64);
+}
+
+/// The main contract governing Ambassadors DAO
+#[near_bindgen]
+#[derive(BorshSerialize, BorshDeserialize, PanicOnDefault)]
+pub struct OldContract {
+    /// defines the policy of the contract
+    pub members: Members,
+    /// the configuration of the contract
+    pub config: Config,
+    /// proposal payouts
+    pub proposals: LookupMap<u64, ProposalPayout>,
+    /// the id of the last proposal
+    pub last_proposal_id: u64,
+    /// proposal payouts
+    pub bounties: LookupMap<u64, BountyPayout>,
+    /// the id of the last proposal
+    pub last_bounty_id: u64,
+    /// proposal payouts
+    pub miscellaneous: LookupMap<u64, MiscellaneousPayout>,
+    /// the id of the last proposal
+    pub last_miscellaneous_id: u64,
+    /// referral payouts
+    pub referrals: LookupMap<u64, ReferralPayout>,
+    /// the id of the last referral
+    pub last_referral_id: u64,
+    /// referral tokens hash map
+    pub referral_tokens: LookupMap<ReferralToken, AccountId>,
+    /// Large blob storage.
+    pub blobs: LookupMap<CryptoHash, AccountId>,
 }
 
 /// The main contract governing Ambassadors DAO
@@ -64,6 +92,8 @@ pub struct Contract {
     pub referral_tokens: LookupMap<ReferralToken, AccountId>,
     /// Large blob storage.
     pub blobs: LookupMap<CryptoHash, AccountId>,
+    /// What oracle is the contract using
+    pub oracle: AccountId,
 }
 
 #[near_bindgen]
@@ -97,6 +127,16 @@ impl Contract {
             last_referral_id: 0,
             referral_tokens: LookupMap::new(b"t".to_vec()),
             blobs: LookupMap::new(b"l".to_vec()),
+            oracle: Self::get_oracle(),
+        }
+    }
+
+    #[private]
+    pub fn get_oracle() -> AccountId {
+        if env::current_account_id().as_str().ends_with(".near") {
+            AccountId::from_str("v1.nearacle.near").unwrap()
+        } else {
+            AccountId::from_str("v1.nearacle.testnet").unwrap()
         }
     }
 
@@ -112,20 +152,39 @@ impl Contract {
             "{}",
             error::ERR_NOT_PERMITTED
         );
-        let this: Contract = env::state_read().expect(error::ERR_CONTRACT_NOT_INITIALIZED);
-        this
+        let this = env::state_read::<OldContract>().expect(error::ERR_CONTRACT_NOT_INITIALIZED);
+        set_seeds(
+            env::random_seed()
+                .into_iter()
+                .fold(0_u64, |acc, x| acc + (x as u64 * x as u64)),
+        );
+        Self {
+            members: this.members,
+            config: this.config,
+            proposals: this.proposals,
+            last_proposal_id: this.last_proposal_id,
+            bounties: this.bounties,
+            last_bounty_id: this.last_bounty_id,
+            miscellaneous: this.miscellaneous,
+            last_miscellaneous_id: this.last_miscellaneous_id,
+            referrals: this.referrals,
+            last_referral_id: this.last_referral_id,
+            referral_tokens: this.referral_tokens,
+            blobs: this.blobs,
+            oracle: Self::get_oracle(),
+        }
     }
 
     #[private]
     pub fn get_exchange_rate(&self) -> Promise {
-        Promise::new(AccountId::from_str(ORACLE_CONTRACT_ID).unwrap()).function_call(
+        Promise::new(self.oracle.clone()).function_call(
             "get_rate".to_string(),
             json!({
                 "currency":"NEAR",
             })
             .to_string()
             .into(),
-            0 as _,
+            0_u128,
             env::used_gas() - env::prepaid_gas(),
         )
     }
@@ -145,59 +204,8 @@ impl Contract {
         match self.members.ambassadors.get(&signer) {
             // if the ambassadors is registered
             // it means this is being called for creating a registration referral
-            Some(m) => {
-                // if the registration referral has been used already
-                if m.registration_referral_used {
-                    return RegistrationResult::new(
-                        false,
-                        "You have already used your registration referral".to_string(),
-                        None,
-                    );
-                }
-                // registration referral has not been used already
-                if let Some(t) = &token {
-                    // lets get the account id to whom the referral token belongs
-                    match self.referral_tokens.get(t) {
-                        // valid referral token
-                        Some(account_id) => {
-                            // if the token belongs to the signer
-                            if account_id == signer {
-                                return RegistrationResult::new(
-                                    false,
-                                    "Cannot use your own referral token".to_string(),
-                                    None,
-                                );
-                            } else {
-                                let ref_id = self.add_payout_referral(PayoutInput::<Referral> {
-                                    description: "Ambassador registration referral".to_string(),
-                                    information: Referral::AmbassadorRegistration {
-                                        referrer_id: signer,
-                                        referred_id: account_id,
-                                    },
-                                });
-                                return RegistrationResult::new(
-                                    false,
-                                    "Registration referral payout created successfully".to_string(),
-                                    Some(ref_id),
-                                );
-                            }
-                        }
-                        // invalid referral token
-                        None => {
-                            return RegistrationResult::new(
-                                false,
-                                "Invalid referral token".to_string(),
-                                None,
-                            );
-                        }
-                    }
-                } else {
-                    return RegistrationResult::new(
-                        false,
-                        "Referral token required".to_string(),
-                        None,
-                    );
-                }
+            Some(_) => {
+                panic!("ERR_AMBASSADOR_ALREADY_REGISTERED");
             }
             // the ambassador is not registered
             None => {
@@ -206,41 +214,40 @@ impl Contract {
                 // insert the ref token in the referral ids hashmap
                 self.referral_tokens.insert(&ref_token, &signer);
 
-                // create a status message
-                let mut result = RegistrationResult {
-                    status: true,
-                    message: "You have been registered successfully".to_string(),
-                    payout_referral_id: None,
-                };
-
                 if let Some(t) = token {
                     if let Some(id) = self.referral_tokens.get(&t) {
                         // create a profile
-                        self.members
-                            .add_ambassador(signer.clone(), ref_token.clone(), true);
+                        let new_id =
+                            self.members
+                                .add_ambassador(signer.clone(), ref_token.clone(), true);
                         // add payout record
-                        let ref_id = self.add_payout_referral(PayoutInput::<Referral> {
+                        self.add_payout_referral(PayoutInput::<Referral> {
                             description: "Ambassador registration referral".to_string(),
                             information: Referral::AmbassadorRegistration {
                                 referrer_id: signer,
                                 referred_id: id,
                             },
                         });
-                        result.payout_referral_id = Some(ref_id);
+                        RegistrationResult::SuccessWithReferral(new_id)
                     } else {
-                        self.members
-                            .add_ambassador(signer.clone(), ref_token.clone(), false);
-                        result.message =
-                            "Your registration was successful but the referral token was invalid"
-                                .to_string();
+                        let new_id =
+                            self.members
+                                .add_ambassador(signer.clone(), ref_token.clone(), false);
+                        RegistrationResult::SuccessWithoutReferral(
+                            new_id,
+                            "Your referral token was invalid".to_string(),
+                        )
                     }
                 } else {
                     // create a profile
-                    self.members
-                        .add_ambassador(signer.clone(), ref_token.clone(), false);
+                    let new_id =
+                        self.members
+                            .add_ambassador(signer.clone(), ref_token.clone(), false);
+                    RegistrationResult::SuccessWithoutReferral(
+                        new_id,
+                        "You did not use a referral token".to_string(),
+                    )
                 }
-
-                result
             }
         }
     }

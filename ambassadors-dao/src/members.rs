@@ -67,7 +67,7 @@ impl Members {
         account_id: AccountId,
         referral_token: types::ReferralToken,
         registration_referral_used: bool,
-    ) {
+    ) -> u64 {
         let id = self.last_ambassador_id + 1;
         self.ambassadors.insert(
             account_id,
@@ -78,6 +78,7 @@ impl Members {
             },
         );
         self.last_ambassador_id = id;
+        id
     }
 }
 

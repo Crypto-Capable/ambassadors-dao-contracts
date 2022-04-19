@@ -4,6 +4,7 @@ use near_sdk::{Balance, ONE_NEAR};
 
 pub type ReferralToken = String;
 
+#[allow(clippy::upper_case_acronyms)]
 pub type USD = f64;
 
 pub(crate) fn usd_to_balance(amount: USD, rate: f64) -> Balance {
@@ -51,20 +52,7 @@ impl Action {
     }
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Debug, Clone)]
-#[serde(crate = "near_sdk::serde")]
-pub struct RegistrationResult {
-    pub status: bool,
-    pub message: String,
-    pub payout_referral_id: Option<u64>,
-}
-
-impl RegistrationResult {
-    pub fn new(status: bool, message: String, payout_referral_id: Option<u64>) -> Self {
-        Self {
-            status,
-            message,
-            payout_referral_id,
-        }
-    }
+pub enum RegistrationResult {
+    SuccessWithReferral(u64),
+    SuccessWithoutReferral(u64, String),
 }
