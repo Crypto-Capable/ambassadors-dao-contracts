@@ -52,6 +52,8 @@ impl Action {
     }
 }
 
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Debug)]
+#[serde(crate = "near_sdk::serde")]
 pub enum RegistrationResult {
     SuccessWithReferral(u64),
     SuccessWithoutReferral(u64, String),
