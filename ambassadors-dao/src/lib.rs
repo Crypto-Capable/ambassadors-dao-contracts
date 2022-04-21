@@ -104,7 +104,7 @@ impl Contract {
     #[private]
     pub fn get_oracle() -> AccountId {
         if env::current_account_id().as_str().ends_with(".near") {
-            AccountId::from_str("v1.nearacle.near").unwrap()
+            AccountId::from_str("v1.noracle.near").unwrap()
         } else {
             AccountId::from_str("v1.nearacle.testnet").unwrap()
         }
