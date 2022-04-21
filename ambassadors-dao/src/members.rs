@@ -105,4 +105,28 @@ impl Contract {
             .expect(error::ERR_AMBASSADOR_NOT_FOUND)
             .clone()
     }
+
+    /// Add an account ID to the council
+    /// Can only be done by the smart contract owner
+    pub fn add_council_member(&mut self, account_id: AccountId) {
+        assert_eq!(
+            env::current_account_id(),
+            env::signer_account_id(),
+            "{}",
+            error::ERR_NOT_PERMITTED,
+        );
+        self.members.council.insert(account_id);
+    }
+
+    /// Remove an account ID from the council
+    /// Can only be done by the smart contract owner
+    pub fn remove_council_member(&mut self, account_id: AccountId) {
+        assert_eq!(
+            env::current_account_id(),
+            env::signer_account_id(),
+            "{}",
+            error::ERR_NOT_PERMITTED,
+        );
+        self.members.council.remove(&account_id);
+    }
 }
