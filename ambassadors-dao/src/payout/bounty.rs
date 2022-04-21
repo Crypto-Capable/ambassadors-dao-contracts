@@ -190,12 +190,13 @@ impl Contract {
                     vec![(bounty.proposer, amounts::CONTENT_COORDINATION_AMOUNT)]
                 }
             };
+            let num_of_transfers = transfers.len();
             // get the exchange rate
             self.get_exchange_rate().then(ext::make_transfers(
                 transfers,
                 env::current_account_id(),
                 0,
-                env::prepaid_gas() - env::used_gas(),
+                Gas(types::ONE_TGAS * num_of_transfers as u64),
             ));
         }
     }
