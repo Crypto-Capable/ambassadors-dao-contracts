@@ -2,19 +2,21 @@ use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{Balance, ONE_NEAR};
 
+pub const ONE_TGAS: u64 = 1_000_000_000_000;
+
 pub type ReferralToken = String;
 
 #[allow(clippy::upper_case_acronyms)]
 pub type USD = f64;
 
-pub(crate) fn usd_to_balance(amount: USD, rate: f64) -> Balance {
-    let mut total_usd = amount * rate;
+pub(crate) fn usd_to_balance(amount: f64, rate: f64) -> Balance {
+    let mut near_tokens = amount / rate;
     let mut divisor = 1_u128;
-    while total_usd.fract() > 1e-8 {
-        total_usd *= 10_f64;
+    while near_tokens.fract() > 0.0001 {
+        near_tokens *= 10_f64;
         divisor *= 10;
     }
-    (total_usd.trunc() as u128) * (ONE_NEAR / divisor)
+    (near_tokens.trunc() as u128) * (ONE_NEAR / divisor)
 }
 
 /// Configuration of the DAO.
