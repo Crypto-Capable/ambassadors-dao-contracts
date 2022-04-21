@@ -116,7 +116,7 @@ impl Contract {
                 vec![(proposal.proposer, transfer_amount)],
                 env::current_account_id(),
                 0,
-                env::used_gas() - env::prepaid_gas(),
+                env::prepaid_gas() - env::used_gas(),
             ));
         }
     }

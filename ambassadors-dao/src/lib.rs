@@ -185,7 +185,7 @@ impl Contract {
             .to_string()
             .into(),
             0_u128,
-            env::used_gas() - env::prepaid_gas(),
+            env::prepaid_gas() - env::used_gas(),
         )
     }
 
