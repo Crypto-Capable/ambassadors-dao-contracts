@@ -4,7 +4,7 @@ use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::LookupMap;
 use near_sdk::json_types::Base58CryptoHash;
 use near_sdk::{env, ext_contract, near_bindgen, serde_json::json, sys};
-use near_sdk::{AccountId, CryptoHash, PanicOnDefault, Promise};
+use near_sdk::{AccountId, CryptoHash, Gas, PanicOnDefault, Promise};
 use std::str::FromStr;
 
 use ran::*;
@@ -32,36 +32,6 @@ pub mod views;
 pub trait CrossContract {
     fn get_exchange_rate(&self) -> f64;
     fn make_transfers(&self, transfers: Vec<(AccountId, USD)>, #[callback_unwrap] cur: f64);
-}
-
-/// The main contract governing Ambassadors DAO
-#[near_bindgen]
-#[derive(BorshSerialize, BorshDeserialize, PanicOnDefault)]
-pub struct OldContract {
-    /// defines the policy of the contract
-    pub members: Members,
-    /// the configuration of the contract
-    pub config: Config,
-    /// proposal payouts
-    pub proposals: LookupMap<u64, ProposalPayout>,
-    /// the id of the last proposal
-    pub last_proposal_id: u64,
-    /// proposal payouts
-    pub bounties: LookupMap<u64, BountyPayout>,
-    /// the id of the last proposal
-    pub last_bounty_id: u64,
-    /// proposal payouts
-    pub miscellaneous: LookupMap<u64, MiscellaneousPayout>,
-    /// the id of the last proposal
-    pub last_miscellaneous_id: u64,
-    /// referral payouts
-    pub referrals: LookupMap<u64, ReferralPayout>,
-    /// the id of the last referral
-    pub last_referral_id: u64,
-    /// referral tokens hash map
-    pub referral_tokens: LookupMap<ReferralToken, AccountId>,
-    /// Large blob storage.
-    pub blobs: LookupMap<CryptoHash, AccountId>,
 }
 
 /// The main contract governing Ambassadors DAO
@@ -152,27 +122,12 @@ impl Contract {
             "{}",
             error::ERR_NOT_PERMITTED
         );
-        let this = env::state_read::<OldContract>().expect(error::ERR_CONTRACT_NOT_INITIALIZED);
         set_seeds(
             env::random_seed()
                 .into_iter()
                 .fold(0_u64, |acc, x| acc + (x as u64 * x as u64)),
         );
-        Self {
-            members: this.members,
-            config: this.config,
-            proposals: this.proposals,
-            last_proposal_id: this.last_proposal_id,
-            bounties: this.bounties,
-            last_bounty_id: this.last_bounty_id,
-            miscellaneous: this.miscellaneous,
-            last_miscellaneous_id: this.last_miscellaneous_id,
-            referrals: this.referrals,
-            last_referral_id: this.last_referral_id,
-            referral_tokens: this.referral_tokens,
-            blobs: this.blobs,
-            oracle: Self::get_oracle(),
-        }
+        env::state_read::<Contract>().expect(error::ERR_CONTRACT_NOT_INITIALIZED)
     }
 
     #[private]
@@ -185,7 +140,7 @@ impl Contract {
             .to_string()
             .into(),
             0_u128,
-            env::prepaid_gas() - env::used_gas(),
+            Gas(types::ONE_TGAS * 10),
         )
     }
 
