@@ -122,11 +122,6 @@ impl Contract {
             "{}",
             error::ERR_NOT_PERMITTED
         );
-        set_seeds(
-            env::random_seed()
-                .into_iter()
-                .fold(0_u64, |acc, x| acc + (x as u64 * x as u64)),
-        );
         env::state_read::<Contract>().expect(error::ERR_CONTRACT_NOT_INITIALIZED)
     }
 
@@ -267,8 +262,13 @@ pub extern "C" fn store_blob() {
 
 impl Contract {
     /// Generate a 24 characters long referral ID.
-    /// It contains [a-zA-Z0-9] mcharacters
+    /// It contains [a-zA-Z] characters
     pub fn internal_generate_referral_id() -> ReferralToken {
+        set_seeds(
+            env::random_seed()
+                .into_iter()
+                .fold(0_u64, |acc, x| acc + (x as u64 * x as u64)),
+        );
         let mut id_vec = vec![0; 24];
         let ru8 = Rnum::newu8();
         for item in id_vec.iter_mut().take(24) {
